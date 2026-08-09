@@ -1,429 +1,810 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>اسکنر QR چک‌ها</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <title>اسکن QR دسته چک</title>
 
-<style>
-  * { box-sizing: border-box; }
-  body {
-    font-family: Tahoma, Vazirmatn, sans-serif;
-    background: #0f172a;
-    color: #e2e8f0;
-    margin: 0;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    min-height: 100vh;
-  }
-  h1 {
-    font-size: 20px;
-    margin-bottom: 4px;
-  }
-  .sub {
-    color: #94a3b8;
-    font-size: 13px;
-    margin-bottom: 16px;
-  }
-  #video-wrap {
-    position: relative;
-    width: 100%;
-    max-width: 420px;
-    border-radius: 16px;
-    overflow: hidden;
-    background: #000;
-    display: none;
-    box-shadow: 0 0 0 2px #334155;
-  }
-  video {
-    width: 100%;
-    display: block;
-  }
-  .scan-box {
-    position: absolute;
-    top: 15%; left: 15%; right: 15%; bottom: 15%;
-    border: 3px solid #22c55e;
-    border-radius: 12px;
-    box-shadow: 0 0 0 2000px rgba(0,0,0,0.35);
-    pointer-events: none;
-  }
-  .controls {
-    display: flex;
-    gap: 10px;
-    margin: 18px 0;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-  button {
-    font-family: inherit;
-    font-size: 15px;
-    padding: 12px 22px;
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-    font-weight: bold;
-    transition: 0.15s;
-  }
-  button:disabled {
-    opacity: 0.45;
-    cursor: not-allowed;
-  }
-  #startBtn { background: #22c55e; color: #052e12; }
-  #startBtn:hover:not(:disabled) { background: #16a34a; }
-  #stopBtn { background: #ef4444; color: #2b0505; }
-  #stopBtn:hover:not(:disabled) { background: #dc2626; }
-  #resetBtn { background: #334155; color: #e2e8f0; }
-  #resetBtn:hover:not(:disabled) { background: #475569; }
-  #exportBtn { background: #3b82f6; color: #05122b; }
-  #exportBtn:hover:not(:disabled) { background: #2563eb; }
+    <!-- Tailwind -->
+    <script src="https://cdn.tailwindcss.com"></script>
 
-  #progress {
-    font-size: 15px;
-    margin-top: 10px;
-    color: #cbd5e1;
-  }
-  #progress b { color: #22c55e; }
+    <!-- QR Scanner -->
+    <script src="https://unpkg.com/html5-qrcode"></script>
 
-  table {
-    width: 100%;
-    max-width: 640px;
-    margin-top: 20px;
-    border-collapse: collapse;
-    background: #1e293b;
-    border-radius: 10px;
-    overflow: hidden;
-  }
-  th, td {
-    padding: 10px 12px;
-    text-align: right;
-    font-size: 13px;
-    border-bottom: 1px solid #334155;
-  }
-  th {
-    background: #0f172a;
-    color: #94a3b8;
-  }
-  tr:last-child td { border-bottom: none; }
-  td.data-col {
-    word-break: break-all;
-    max-width: 260px;
-  }
-  .del-btn {
-    background: #7f1d1d;
-    color: #fecaca;
-    padding: 4px 10px;
-    font-size: 12px;
-    border-radius: 6px;
-  }
-  #status {
-    font-size: 13px;
-    color: #f87171;
-    margin-top: 8px;
-    min-height: 18px;
-  }
-  .count-input {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 10px;
-  }
-  .count-input input {
-    width: 60px;
-    padding: 6px 8px;
-    border-radius: 8px;
-    border: 1px solid #334155;
-    background: #1e293b;
-    color: #e2e8f0;
-    font-size: 14px;
-    text-align: center;
-  }
-</style>
+    <!-- Excel -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+    <style>
+        body {
+            font-family: Tahoma, Arial, sans-serif;
+            background: #f8fafc;
+        }
+
+        #reader {
+            width: 100%;
+        }
+
+        #reader video {
+            border-radius: 16px;
+            object-fit: cover;
+        }
+
+        #reader__dashboard_section_csr button {
+            border: none !important;
+            background: #0f172a !important;
+            color: white !important;
+            padding: 10px 18px !important;
+            border-radius: 10px !important;
+            cursor: pointer;
+        }
+
+        #reader__dashboard_section_swaplink {
+            color: #2563eb !important;
+        }
+
+        .scan-success {
+            animation: success 0.5s ease;
+        }
+
+        @keyframes success {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.02);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+    </style>
 </head>
-<body>
 
-<h1>📷 اسکن QR چک‌ها</h1>
-<div class="sub">دکمه شروع رو بزن و QR هر چک رو جلوی دوربین بگیر</div>
+<body class="min-h-screen">
 
-<div class="count-input">
-  <label>تعداد چک‌ها:</label>
-  <input type="number" id="targetCount" value="10" min="1" max="200">
-</div>
+    <div class="max-w-5xl mx-auto px-4 py-8">
 
-<div class="controls">
-  <button id="startBtn">▶️ شروع اسکن</button>
-  <button id="stopBtn" disabled>⏹️ توقف</button>
-  <button id="resetBtn">🗑️ پاک کردن لیست</button>
-  <button id="exportBtn" disabled>📥 دانلود اکسل</button>
-</div>
+        <!-- Header -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-6">
 
-<div id="video-wrap">
-  <video id="video" playsinline muted></video>
-  <div class="scan-box"></div>
-</div>
-<div id="zoom-wrap" style="display:none; width:100%; max-width:420px; margin-top:10px;">
-  <label style="font-size:13px; color:#94a3b8;">🔍 زوم</label>
-  <input type="range" id="zoomRange" style="width:100%;">
-</div>
-<canvas id="canvas" style="display:none;"></canvas>
+            <div class="flex items-center justify-between gap-4">
 
-<div id="progress">اسکن‌شده: <b id="countNum">0</b> / <span id="targetNum">10</span></div>
-<div id="status"></div>
+                <div>
+                    <h1 class="text-2xl font-bold text-slate-800">
+                        اسکن QR دسته چک
+                    </h1>
 
-<table id="resultTable" style="display:none;">
-  <thead>
-    <tr>
-      <th>#</th>
-      <th>محتوای QR</th>
-      <th>زمان اسکن</th>
-      <th></th>
-    </tr>
-  </thead>
-  <tbody id="resultBody"></tbody>
-</table>
+                    <p class="text-sm text-slate-500 mt-2">
+                        QR دسته‌چک را مقابل دوربین قرار دهید
+                    </p>
+                </div>
+
+                <div
+                    id="statusBadge"
+                    class="px-4 py-2 rounded-full bg-slate-100 text-slate-600 text-sm font-medium">
+                    آماده اسکن
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- Scanner -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mb-6">
+
+            <div
+                id="reader"
+                class="overflow-hidden rounded-2xl">
+            </div>
+
+            <div class="flex flex-wrap gap-3 mt-5">
+
+                <button
+                    id="startBtn"
+                    onclick="startScanner()"
+                    class="flex-1 min-w-[180px] bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-5 rounded-xl transition">
+
+                    📷 شروع اسکن
+
+                </button>
+
+                <button
+                    id="stopBtn"
+                    onclick="stopScanner()"
+                    disabled
+                    class="flex-1 min-w-[180px] bg-red-500 hover:bg-red-600 disabled:bg-slate-200 disabled:text-slate-400 text-white font-medium py-3 px-5 rounded-xl transition">
+
+                    ⏹ توقف اسکن
+
+                </button>
+
+            </div>
+
+        </div>
+
+
+        <!-- Last Result -->
+        <div
+            id="lastResult"
+            class="hidden bg-emerald-50 border border-emerald-200 rounded-2xl p-5 mb-6">
+
+            <div class="flex items-center gap-3">
+
+                <div
+                    class="w-11 h-11 rounded-full bg-emerald-100 flex items-center justify-center text-xl">
+                    ✓
+                </div>
+
+                <div class="flex-1">
+
+                    <div class="text-sm text-emerald-600 font-medium">
+                        QR با موفقیت خوانده شد
+                    </div>
+
+                    <div
+                        id="lastQr"
+                        class="mt-1 font-mono text-slate-800 break-all">
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- Results -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+
+            <div class="p-5 border-b border-slate-200 flex items-center justify-between">
+
+                <div>
+                    <h2 class="font-bold text-lg text-slate-800">
+                        QR های اسکن شده
+                    </h2>
+
+                    <p class="text-sm text-slate-500 mt-1">
+                        اطلاعات QR های خوانده شده در این بخش نمایش داده می‌شود
+                    </p>
+                </div>
+
+                <button
+                    id="clearBtn"
+                    onclick="clearResults()"
+                    class="text-sm text-red-500 hover:text-red-700">
+
+                    پاک کردن
+
+                </button>
+
+            </div>
+
+
+            <div class="overflow-x-auto">
+
+                <table class="w-full text-sm">
+
+                    <thead class="bg-slate-50">
+
+                        <tr>
+
+                            <th class="text-right px-5 py-4 font-semibold text-slate-600">
+                                اطلاعات QR
+                            </th>
+
+                            <th class="text-right px-5 py-4 font-semibold text-slate-600">
+                                زمان اسکن
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody id="resultsBody">
+
+                        <tr id="emptyRow">
+
+                            <td
+                                colspan="2"
+                                class="text-center py-12 text-slate-400">
+
+                                هنوز QR ای اسکن نشده است
+
+                            </td>
+
+                        </tr>
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+
+            <!-- Export -->
+            <div class="p-5 border-t border-slate-200">
+
+                <button
+                    id="exportBtn"
+                    onclick="exportExcel()"
+                    disabled
+                    class="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-200 disabled:text-slate-400 text-white font-medium py-3 px-5 rounded-xl transition">
+
+                    📊 خروجی Excel
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
 
 <script>
-const video = document.getElementById('video');
-const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext('2d');
-const videoWrap = document.getElementById('video-wrap');
 
-const startBtn = document.getElementById('startBtn');
-const stopBtn = document.getElementById('stopBtn');
-const resetBtn = document.getElementById('resetBtn');
-const exportBtn = document.getElementById('exportBtn');
-const targetInput = document.getElementById('targetCount');
+    let html5QrCode = null;
 
-const countNum = document.getElementById('countNum');
-const targetNum = document.getElementById('targetNum');
-const statusEl = document.getElementById('status');
-const resultTable = document.getElementById('resultTable');
-const resultBody = document.getElementById('resultBody');
+    let isScanning = false;
 
-let stream = null;
-let scanning = false;
-let rafId = null;
-let scannedItems = []; // {data, time}
-let targetCount = 10;
+    let scanResults = [];
 
-targetInput.addEventListener('change', () => {
-  targetCount = Math.max(1, parseInt(targetInput.value) || 10);
-  targetNum.textContent = targetCount;
-});
+    // جلوگیری از ثبت پشت سرهم یک QR
+    let lastScannedText = null;
 
-function setupZoom(track, zoomCap) {
-  const zoomWrap = document.getElementById('zoom-wrap');
-  const zoomRange = document.getElementById('zoomRange');
-  zoomRange.min = zoomCap.min;
-  zoomRange.max = zoomCap.max;
-  zoomRange.step = zoomCap.step || 0.1;
-  zoomRange.value = zoomCap.min;
-  zoomWrap.style.display = 'block';
+    let lastScanTime = 0;
 
-  zoomRange.oninput = () => {
-    track.applyConstraints({ advanced: [{ zoom: parseFloat(zoomRange.value) }] }).catch(() => {});
-  };
-}
+    // مدت زمانی که یک QR دوباره قابل ثبت نیست
+    const duplicateDelay = 2000;
 
-function beep() {
-  try {
-    const ctxAudio = new (window.AudioContext || window.webkitAudioContext)();
-    const osc = ctxAudio.createOscillator();
-    const gain = ctxAudio.createGain();
-    osc.connect(gain);
-    gain.connect(ctxAudio.destination);
-    osc.frequency.value = 880;
-    gain.gain.setValueAtTime(0.15, ctxAudio.currentTime);
-    osc.start();
-    osc.stop(ctxAudio.currentTime + 0.12);
-  } catch (e) {}
-}
 
-async function startScan() {
-  statusEl.textContent = '';
-  targetCount = Math.max(1, parseInt(targetInput.value) || 10);
-  targetNum.textContent = targetCount;
+    // -----------------------------------------
+    // Start Scanner
+    // -----------------------------------------
 
-  try {
-    stream = await navigator.mediaDevices.getUserMedia({
-      video: {
-        facingMode: { ideal: 'environment' },
-        width: { ideal: 1920 },
-        height: { ideal: 1080 }
-      }
-    });
-  } catch (err) {
-    // اگه رزولوشن بالا پشتیبانی نشد، با تنظیمات ساده‌تر دوباره امتحان کن
-    try {
-      stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' }
-      });
-    } catch (err2) {
-      statusEl.textContent = 'دسترسی به دوربین ممکن نشد: ' + err2.message;
-      return;
+    async function startScanner() {
+
+        if (isScanning)
+            return;
+
+        try {
+
+            html5QrCode = new Html5Qrcode("reader");
+
+            updateStatus(
+                "در حال اسکن...",
+                "bg-blue-100 text-blue-700"
+            );
+
+            document.getElementById("startBtn").disabled = true;
+
+            document.getElementById("stopBtn").disabled = false;
+
+
+            /*
+             * qrbox باعث می‌شود محدوده‌ای برای QR داشته باشیم.
+             *
+             * برای QR کوچک دسته‌چک این مقدار را نسبتاً بزرگ
+             * قرار داده‌ایم تا پیدا کردن QR راحت‌تر باشد.
+             */
+
+            const config = {
+
+                fps: 15,
+
+                qrbox: function(viewfinderWidth, viewfinderHeight) {
+
+                    const size = Math.min(
+                        viewfinderWidth * 0.75,
+                        viewfinderHeight * 0.75
+                    );
+
+                    return {
+                        width: size,
+                        height: size
+                    };
+
+                },
+
+                aspectRatio: 1.0,
+
+                disableFlip: false
+
+            };
+
+
+            await html5QrCode.start(
+
+                {
+                    facingMode: "environment"
+                },
+
+                config,
+
+                onScanSuccess,
+
+                onScanFailure
+
+            );
+
+            isScanning = true;
+
+        }
+        catch (error) {
+
+            console.error(error);
+
+            updateStatus(
+                "خطا در دسترسی به دوربین",
+                "bg-red-100 text-red-700"
+            );
+
+            document.getElementById("startBtn").disabled = false;
+
+            document.getElementById("stopBtn").disabled = true;
+
+            alert(
+                "امکان دسترسی به دوربین وجود ندارد.\n\n" +
+                "اگر با فایل HTML اجرا می‌کنید، بهتر است آن را از طریق localhost یا HTTPS اجرا کنید."
+            );
+        }
+
     }
-  }
 
-  // تلاش برای فعال کردن فوکوس پیوسته (اگه گوشی پشتیبانی کنه)
-  const track = stream.getVideoTracks()[0];
-  try {
-    const capabilities = track.getCapabilities ? track.getCapabilities() : {};
-    const advanced = [];
-    if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
-      advanced.push({ focusMode: 'continuous' });
+
+    // -----------------------------------------
+    // QR Success
+    // -----------------------------------------
+
+    function onScanSuccess(decodedText, decodedResult) {
+
+        const now = Date.now();
+
+
+        /*
+         * جلوگیری از ثبت چندباره همان QR
+         * چون وقتی QR جلوی دوربین باشد ممکن است
+         * چندین بار در ثانیه خوانده شود.
+         */
+
+        if (
+            decodedText === lastScannedText &&
+            now - lastScanTime < duplicateDelay
+        ) {
+
+            return;
+
+        }
+
+
+        lastScannedText = decodedText;
+
+        lastScanTime = now;
+
+
+        // بررسی اینکه قبلاً ثبت نشده باشد
+        const alreadyExists = scanResults.some(
+            item => item.qrCode === decodedText
+        );
+
+
+        if (alreadyExists) {
+
+            showLastResult(
+                decodedText,
+                true
+            );
+
+            return;
+
+        }
+
+
+        // ثبت اطلاعات
+        const result = {
+
+            qrCode: decodedText,
+
+            scanTime: new Date()
+
+        };
+
+
+        scanResults.push(result);
+
+
+        addResultToTable(result);
+
+
+        showLastResult(
+            decodedText,
+            false
+        );
+
+
+        updateStatus(
+            "QR با موفقیت اسکن شد",
+            "bg-emerald-100 text-emerald-700"
+        );
+
+
+        // بعد از مدت کوتاه دوباره وضعیت را آماده اسکن می‌کنیم
+        setTimeout(() => {
+
+            if (isScanning) {
+
+                updateStatus(
+                    "آماده اسکن QR بعدی",
+                    "bg-blue-100 text-blue-700"
+                );
+
+            }
+
+        }, 1000);
+
     }
-    if (advanced.length) {
-      await track.applyConstraints({ advanced });
+
+
+    // -----------------------------------------
+    // QR Failure
+    // -----------------------------------------
+
+    function onScanFailure(error) {
+
+        // اینجا چیزی نمایش نمی‌دهیم.
+        // چون در زمان اسکن، خطای پیدا نشدن QR
+        // کاملاً طبیعی است.
+
     }
-    if (capabilities.zoom) {
-      setupZoom(track, capabilities.zoom);
+
+
+    // -----------------------------------------
+    // Stop Scanner
+    // -----------------------------------------
+
+    async function stopScanner() {
+
+        if (!html5QrCode)
+            return;
+
+
+        try {
+
+            await html5QrCode.stop();
+
+            await html5QrCode.clear();
+
+        }
+        catch (error) {
+
+            console.error(error);
+
+        }
+
+
+        html5QrCode = null;
+
+        isScanning = false;
+
+
+        document.getElementById("startBtn").disabled = false;
+
+        document.getElementById("stopBtn").disabled = true;
+
+
+        updateStatus(
+            "اسکن متوقف شد",
+            "bg-slate-100 text-slate-600"
+        );
+
     }
-  } catch (e) {
-    // پشتیبانی نمی‌شه، مشکلی نیست
-  }
 
-  video.srcObject = stream;
-  await video.play();
 
-  videoWrap.style.display = 'block';
-  startBtn.disabled = true;
-  stopBtn.disabled = false;
-  targetInput.disabled = true;
-  scanning = true;
-  statusEl.style.color = '#94a3b8';
-  statusEl.textContent = 'گوشی رو ثابت نگه دار و کمی نزدیک‌تر ببر تا فوکوس بشه';
+    // -----------------------------------------
+    // Add Result To Table
+    // -----------------------------------------
 
-  tick();
-}
+    function addResultToTable(result) {
 
-function stopScan(finished) {
-  scanning = false;
-  if (rafId) cancelAnimationFrame(rafId);
-  if (stream) {
-    stream.getTracks().forEach(t => t.stop());
-    stream = null;
-  }
-  videoWrap.style.display = 'none';
-  document.getElementById('zoom-wrap').style.display = 'none';
-  startBtn.disabled = false;
-  stopBtn.disabled = true;
-  targetInput.disabled = false;
+        const emptyRow =
+            document.getElementById("emptyRow");
 
-  if (finished) {
-    statusEl.style.color = '#4ade80';
-    statusEl.textContent = `✅ اسکن ${scannedItems.length} چک با موفقیت انجام شد.`;
-  }
-}
+        if (emptyRow) {
 
-function tick() {
-  if (!scanning) return;
+            emptyRow.remove();
 
-  if (video.readyState === video.HAVE_ENOUGH_DATA) {
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const code = jsQR(imageData.data, imageData.width, imageData.height, {
-      inversionAttempts: 'attemptBoth'
-    });
+        }
 
-    if (code && code.data) {
-      handleDetected(code.data);
+
+        const tbody =
+            document.getElementById("resultsBody");
+
+
+        const tr =
+            document.createElement("tr");
+
+
+        tr.className =
+            "border-b border-slate-100 hover:bg-slate-50";
+
+
+        tr.innerHTML = `
+
+            <td class="px-5 py-4">
+
+                <div
+                    class="font-mono text-slate-700 break-all">
+                    ${escapeHtml(result.qrCode)}
+                </div>
+
+            </td>
+
+            <td class="px-5 py-4 text-slate-500 whitespace-nowrap">
+
+                ${formatDate(result.scanTime)}
+
+            </td>
+
+        `;
+
+
+        tbody.prepend(tr);
+
+
+        document.getElementById("exportBtn").disabled = false;
+
     }
-  }
 
-  rafId = requestAnimationFrame(tick);
-}
 
-function handleDetected(data) {
-  // جلوگیری از ثبت تکراری پشت‌سرهم همون کد
-  const last = scannedItems[scannedItems.length - 1];
-  if (last && last.data === data) return;
+    // -----------------------------------------
+    // Last Result
+    // -----------------------------------------
 
-  scannedItems.push({
-    data: data,
-    time: new Date().toLocaleTimeString('fa-IR')
-  });
+    function showLastResult(text, duplicate) {
 
-  beep();
-  renderTable();
+        const container =
+            document.getElementById("lastResult");
 
-  countNum.textContent = scannedItems.length;
-  exportBtn.disabled = scannedItems.length === 0;
+        const value =
+            document.getElementById("lastQr");
 
-  if (scannedItems.length >= targetCount) {
-    stopScan(true);
-  }
-}
 
-function renderTable() {
-  resultTable.style.display = scannedItems.length ? 'table' : 'none';
-  resultBody.innerHTML = '';
-  scannedItems.forEach((item, i) => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${i + 1}</td>
-      <td class="data-col">${escapeHtml(item.data)}</td>
-      <td>${item.time}</td>
-      <td><button class="del-btn" data-idx="${i}">حذف</button></td>
-    `;
-    resultBody.appendChild(tr);
-  });
+        container.classList.remove("hidden");
 
-  document.querySelectorAll('.del-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const idx = parseInt(e.target.dataset.idx);
-      scannedItems.splice(idx, 1);
-      countNum.textContent = scannedItems.length;
-      exportBtn.disabled = scannedItems.length === 0;
-      renderTable();
-    });
-  });
-}
+        container.classList.remove("scan-success");
 
-function escapeHtml(str) {
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
-}
+        void container.offsetWidth;
 
-function exportExcel() {
-  if (scannedItems.length === 0) return;
+        container.classList.add("scan-success");
 
-  const rows = scannedItems.map((item, i) => ({
-    'ردیف': i + 1,
-    'محتوای QR': item.data,
-    'زمان اسکن': item.time
-  }));
 
-  const ws = XLSX.utils.json_to_sheet(rows);
-  ws['!cols'] = [{ wch: 6 }, { wch: 50 }, { wch: 15 }];
+        value.textContent = text;
 
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'چک‌ها');
 
-  const now = new Date();
-  const fileName = `cheks_${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}.xlsx`;
+        if (duplicate) {
 
-  XLSX.writeFile(wb, fileName);
-}
+            container.classList.remove(
+                "bg-emerald-50",
+                "border-emerald-200"
+            );
 
-function resetAll() {
-  scannedItems = [];
-  countNum.textContent = 0;
-  exportBtn.disabled = true;
-  renderTable();
-  statusEl.textContent = '';
-}
+            container.classList.add(
+                "bg-amber-50",
+                "border-amber-200"
+            );
 
-startBtn.addEventListener('click', startScan);
-stopBtn.addEventListener('click', () => stopScan(false));
-resetBtn.addEventListener('click', resetAll);
-exportBtn.addEventListener('click', exportExcel);
+        }
+        else {
+
+            container.classList.remove(
+                "bg-amber-50",
+                "border-amber-200"
+            );
+
+            container.classList.add(
+                "bg-emerald-50",
+                "border-emerald-200"
+            );
+
+        }
+
+    }
+
+
+    // -----------------------------------------
+    // Status
+    // -----------------------------------------
+
+    function updateStatus(text, classes) {
+
+        const badge =
+            document.getElementById("statusBadge");
+
+
+        badge.textContent = text;
+
+        badge.className =
+            "px-4 py-2 rounded-full text-sm font-medium " +
+            classes;
+
+    }
+
+
+    // -----------------------------------------
+    // Clear Results
+    // -----------------------------------------
+
+    function clearResults() {
+
+        if (scanResults.length === 0)
+            return;
+
+
+        if (!confirm("آیا از پاک کردن تمام اطلاعات اطمینان دارید؟"))
+            return;
+
+
+        scanResults = [];
+
+        lastScannedText = null;
+
+        lastScanTime = 0;
+
+
+        document.getElementById("resultsBody").innerHTML = `
+
+            <tr id="emptyRow">
+
+                <td
+                    colspan="2"
+                    class="text-center py-12 text-slate-400">
+
+                    هنوز QR ای اسکن نشده است
+
+                </td>
+
+            </tr>
+
+        `;
+
+
+        document.getElementById("exportBtn").disabled = true;
+
+    }
+
+
+    // -----------------------------------------
+    // Export Excel
+    // -----------------------------------------
+
+    function exportExcel() {
+
+        if (scanResults.length === 0) {
+
+            alert("هیچ اطلاعاتی برای خروجی وجود ندارد.");
+
+            return;
+
+        }
+
+
+        const excelData =
+            scanResults.map(item => ({
+
+                "QR Code": item.qrCode,
+
+                "زمان اسکن": formatDate(item.scanTime)
+
+            }));
+
+
+        const worksheet =
+            XLSX.utils.json_to_sheet(excelData);
+
+
+        // تنظیم عرض ستون‌ها
+        worksheet["!cols"] = [
+
+            {
+                wch: 60
+            },
+
+            {
+                wch: 25
+            }
+
+        ];
+
+
+        const workbook =
+            XLSX.utils.book_new();
+
+
+        XLSX.utils.book_append_sheet(
+            workbook,
+            worksheet,
+            "QR Codes"
+        );
+
+
+        const fileName =
+            "Cheque_QR_" +
+            getFileDate() +
+            ".xlsx";
+
+
+        XLSX.writeFile(
+            workbook,
+            fileName
+        );
+
+    }
+
+
+    // -----------------------------------------
+    // Date
+    // -----------------------------------------
+
+    function formatDate(date) {
+
+        return date.toLocaleString(
+            "fa-IR",
+            {
+                year: "numeric",
+                month: "2-digit",
+                day: "2-digit",
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit"
+            }
+        );
+
+    }
+
+
+    function getFileDate() {
+
+        const d = new Date();
+
+        return (
+
+            d.getFullYear() +
+
+            String(d.getMonth() + 1).padStart(2, "0") +
+
+            String(d.getDate()).padStart(2, "0") +
+
+            "_" +
+
+            String(d.getHours()).padStart(2, "0") +
+
+            String(d.getMinutes()).padStart(2, "0")
+
+        );
+
+    }
+
+
+    // -----------------------------------------
+    // Security
+    // -----------------------------------------
+
+    function escapeHtml(text) {
+
+        const div =
+            document.createElement("div");
+
+        div.textContent = text;
+
+        return div.innerHTML;
+
+    }
+
 </script>
 
 </body>
