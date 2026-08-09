@@ -7,50 +7,58 @@
 
     <title>اسکن QR دسته چک</title>
 
-    <!-- Tailwind -->
     <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- QR Scanner -->
-    <script src="https://unpkg.com/html5-qrcode"></script>
+    <!-- QR Decoder -->
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 
     <!-- Excel -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
     <style>
+
         body {
             font-family: Tahoma, Arial, sans-serif;
-            background: #f8fafc;
         }
 
-        #reader {
-            width: 100%;
+        #video {
+            transform: scaleX(1);
         }
 
-        #reader video {
-            border-radius: 16px;
-            object-fit: cover;
+        .scan-line {
+            position: absolute;
+            left: 5%;
+            right: 5%;
+            height: 2px;
+            background: #22c55e;
+            box-shadow: 0 0 10px #22c55e;
+            animation: scanLine 2s linear infinite;
         }
 
-        #reader__dashboard_section_csr button {
-            border: none !important;
-            background: #0f172a !important;
-            color: white !important;
-            padding: 10px 18px !important;
-            border-radius: 10px !important;
-            cursor: pointer;
+        @keyframes scanLine {
+
+            0% {
+                top: 10%;
+            }
+
+            50% {
+                top: 90%;
+            }
+
+            100% {
+                top: 10%;
+            }
+
         }
 
-        #reader__dashboard_section_swaplink {
-            color: #2563eb !important;
-        }
-
-        .scan-success {
-            animation: success 0.5s ease;
+        .success-animation {
+            animation: success 0.4s ease;
         }
 
         @keyframes success {
+
             0% {
-                transform: scale(1);
+                transform: scale(.95);
             }
 
             50% {
@@ -60,184 +68,40 @@
             100% {
                 transform: scale(1);
             }
+
         }
+
     </style>
+
 </head>
 
-<body class="min-h-screen">
+<body class="bg-slate-100 min-h-screen">
 
-    <div class="max-w-5xl mx-auto px-4 py-8">
+<div class="max-w-5xl mx-auto p-5">
 
-        <!-- Header -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-6">
+    <!-- Header -->
 
-            <div class="flex items-center justify-between gap-4">
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mb-5">
 
-                <div>
-                    <h1 class="text-2xl font-bold text-slate-800">
-                        اسکن QR دسته چک
-                    </h1>
+        <div class="flex items-center justify-between">
 
-                    <p class="text-sm text-slate-500 mt-2">
-                        QR دسته‌چک را مقابل دوربین قرار دهید
-                    </p>
-                </div>
+            <div>
 
-                <div
-                    id="statusBadge"
-                    class="px-4 py-2 rounded-full bg-slate-100 text-slate-600 text-sm font-medium">
-                    آماده اسکن
-                </div>
+                <h1 class="text-xl font-bold text-slate-800">
+                    اسکن QR دسته‌چک
+                </h1>
+
+                <p class="text-sm text-slate-500 mt-1">
+                    دسته‌چک را مقابل دوربین قرار دهید
+                </p>
 
             </div>
-
-        </div>
-
-
-        <!-- Scanner -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mb-6">
 
             <div
-                id="reader"
-                class="overflow-hidden rounded-2xl">
-            </div>
+                id="status"
+                class="px-4 py-2 rounded-full bg-slate-100 text-slate-600 text-sm">
 
-            <div class="flex flex-wrap gap-3 mt-5">
-
-                <button
-                    id="startBtn"
-                    onclick="startScanner()"
-                    class="flex-1 min-w-[180px] bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-5 rounded-xl transition">
-
-                    📷 شروع اسکن
-
-                </button>
-
-                <button
-                    id="stopBtn"
-                    onclick="stopScanner()"
-                    disabled
-                    class="flex-1 min-w-[180px] bg-red-500 hover:bg-red-600 disabled:bg-slate-200 disabled:text-slate-400 text-white font-medium py-3 px-5 rounded-xl transition">
-
-                    ⏹ توقف اسکن
-
-                </button>
-
-            </div>
-
-        </div>
-
-
-        <!-- Last Result -->
-        <div
-            id="lastResult"
-            class="hidden bg-emerald-50 border border-emerald-200 rounded-2xl p-5 mb-6">
-
-            <div class="flex items-center gap-3">
-
-                <div
-                    class="w-11 h-11 rounded-full bg-emerald-100 flex items-center justify-center text-xl">
-                    ✓
-                </div>
-
-                <div class="flex-1">
-
-                    <div class="text-sm text-emerald-600 font-medium">
-                        QR با موفقیت خوانده شد
-                    </div>
-
-                    <div
-                        id="lastQr"
-                        class="mt-1 font-mono text-slate-800 break-all">
-                    </div>
-
-                </div>
-
-            </div>
-
-        </div>
-
-
-        <!-- Results -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-
-            <div class="p-5 border-b border-slate-200 flex items-center justify-between">
-
-                <div>
-                    <h2 class="font-bold text-lg text-slate-800">
-                        QR های اسکن شده
-                    </h2>
-
-                    <p class="text-sm text-slate-500 mt-1">
-                        اطلاعات QR های خوانده شده در این بخش نمایش داده می‌شود
-                    </p>
-                </div>
-
-                <button
-                    id="clearBtn"
-                    onclick="clearResults()"
-                    class="text-sm text-red-500 hover:text-red-700">
-
-                    پاک کردن
-
-                </button>
-
-            </div>
-
-
-            <div class="overflow-x-auto">
-
-                <table class="w-full text-sm">
-
-                    <thead class="bg-slate-50">
-
-                        <tr>
-
-                            <th class="text-right px-5 py-4 font-semibold text-slate-600">
-                                اطلاعات QR
-                            </th>
-
-                            <th class="text-right px-5 py-4 font-semibold text-slate-600">
-                                زمان اسکن
-                            </th>
-
-                        </tr>
-
-                    </thead>
-
-                    <tbody id="resultsBody">
-
-                        <tr id="emptyRow">
-
-                            <td
-                                colspan="2"
-                                class="text-center py-12 text-slate-400">
-
-                                هنوز QR ای اسکن نشده است
-
-                            </td>
-
-                        </tr>
-
-                    </tbody>
-
-                </table>
-
-            </div>
-
-
-            <!-- Export -->
-            <div class="p-5 border-t border-slate-200">
-
-                <button
-                    id="exportBtn"
-                    onclick="exportExcel()"
-                    disabled
-                    class="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-200 disabled:text-slate-400 text-white font-medium py-3 px-5 rounded-xl transition">
-
-                    📊 خروجی Excel
-
-                </button>
+                آماده
 
             </div>
 
@@ -246,425 +110,1041 @@
     </div>
 
 
+    <!-- Camera -->
+
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 mb-5">
+
+        <div
+            class="relative overflow-hidden rounded-2xl bg-black aspect-video">
+
+            <video
+                id="video"
+                autoplay
+                muted
+                playsinline
+                class="w-full h-full object-cover">
+            </video>
+
+
+            <!-- Scan Overlay -->
+
+            <div class="absolute inset-0 pointer-events-none">
+
+                <div
+                    class="absolute inset-[8%] border-2 border-white/60 rounded-xl">
+
+                </div>
+
+                <div
+                    class="scan-line">
+                </div>
+
+            </div>
+
+
+            <!-- Camera loading -->
+
+            <div
+                id="cameraLoading"
+                class="absolute inset-0 flex items-center justify-center bg-black/70 text-white">
+
+                دوربین خاموش است
+
+            </div>
+
+        </div>
+
+
+        <!-- Zoom -->
+
+        <div
+            id="zoomContainer"
+            class="hidden mt-4">
+
+            <div class="flex items-center gap-3">
+
+                <span class="text-sm text-slate-600">
+                    بزرگنمایی
+                </span>
+
+                <input
+                    id="zoomSlider"
+                    type="range"
+                    min="1"
+                    max="3"
+                    step="0.1"
+                    value="1"
+                    class="flex-1">
+
+                <span
+                    id="zoomValue"
+                    class="text-sm text-slate-600 w-12 text-center">
+
+                    1x
+
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <!-- Buttons -->
+
+        <div class="flex gap-3 mt-5">
+
+            <button
+                id="startBtn"
+                onclick="startCamera()"
+                class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-medium">
+
+                📷 شروع اسکن
+
+            </button>
+
+
+            <button
+                id="stopBtn"
+                onclick="stopCamera()"
+                disabled
+                class="flex-1 bg-red-500 hover:bg-red-600 disabled:bg-slate-200 disabled:text-slate-400 text-white py-3 rounded-xl font-medium">
+
+                ⏹ توقف
+
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- Last QR -->
+
+    <div
+        id="lastResult"
+        class="hidden bg-emerald-50 border border-emerald-200 rounded-2xl p-4 mb-5">
+
+        <div class="text-sm text-emerald-600 font-semibold">
+            QR شناسایی شد
+        </div>
+
+        <div
+            id="lastQr"
+            class="font-mono text-slate-800 mt-2 break-all">
+        </div>
+
+    </div>
+
+
+    <!-- Results -->
+
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+
+        <div class="p-5 border-b flex items-center justify-between">
+
+            <div>
+
+                <h2 class="font-bold text-slate-800">
+                    QR های اسکن شده
+                </h2>
+
+                <p class="text-sm text-slate-500 mt-1">
+                    تعداد اسکن شده:
+                    <span id="count">0</span>
+                </p>
+
+            </div>
+
+
+            <button
+                onclick="clearResults()"
+                class="text-red-500 text-sm">
+
+                پاک کردن
+
+            </button>
+
+        </div>
+
+
+        <div class="overflow-x-auto">
+
+            <table class="w-full">
+
+                <thead class="bg-slate-50">
+
+                <tr>
+
+                    <th class="text-right px-5 py-3 text-sm">
+                        QR Code
+                    </th>
+
+                    <th class="text-right px-5 py-3 text-sm">
+                        زمان
+                    </th>
+
+                </tr>
+
+                </thead>
+
+
+                <tbody id="results">
+
+                <tr id="empty">
+
+                    <td
+                        colspan="2"
+                        class="text-center py-10 text-slate-400">
+
+                        هنوز QR اسکن نشده است
+
+                    </td>
+
+                </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+
+        <div class="p-5 border-t">
+
+            <button
+                id="exportBtn"
+                onclick="exportExcel()"
+                disabled
+                class="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-200 disabled:text-slate-400 text-white py-3 rounded-xl font-medium">
+
+                📊 خروجی Excel
+
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- Hidden Canvas -->
+
+<canvas
+    id="canvas"
+    class="hidden">
+</canvas>
+
+
 <script>
 
-    let html5QrCode = null;
+let video = document.getElementById("video");
 
-    let isScanning = false;
+let canvas = document.getElementById("canvas");
 
-    let scanResults = [];
+let ctx = canvas.getContext("2d", {
+    willReadFrequently: true
+});
 
-    // جلوگیری از ثبت پشت سرهم یک QR
-    let lastScannedText = null;
+let stream = null;
 
-    let lastScanTime = 0;
+let scanning = false;
 
-    // مدت زمانی که یک QR دوباره قابل ثبت نیست
-    const duplicateDelay = 2000;
+let scanTimer = null;
 
+let results = [];
 
-    // -----------------------------------------
-    // Start Scanner
-    // -----------------------------------------
+let lastQR = "";
 
-    async function startScanner() {
+let lastQRTime = 0;
 
-        if (isScanning)
-            return;
-
-        try {
-
-            html5QrCode = new Html5Qrcode("reader");
-
-            updateStatus(
-                "در حال اسکن...",
-                "bg-blue-100 text-blue-700"
-            );
-
-            document.getElementById("startBtn").disabled = true;
-
-            document.getElementById("stopBtn").disabled = false;
+let currentTrack = null;
 
 
-            /*
-             * qrbox باعث می‌شود محدوده‌ای برای QR داشته باشیم.
-             *
-             * برای QR کوچک دسته‌چک این مقدار را نسبتاً بزرگ
-             * قرار داده‌ایم تا پیدا کردن QR راحت‌تر باشد.
-             */
+/*
+|--------------------------------------------------------------------------
+| Start Camera
+|--------------------------------------------------------------------------
+*/
 
-            const config = {
+async function startCamera() {
 
-                fps: 15,
+    try {
 
-                qrbox: function(viewfinderWidth, viewfinderHeight) {
+        updateStatus(
+            "در حال باز کردن دوربین...",
+            "bg-blue-100 text-blue-700"
+        );
 
-                    const size = Math.min(
-                        viewfinderWidth * 0.75,
-                        viewfinderHeight * 0.75
-                    );
 
-                    return {
-                        width: size,
-                        height: size
-                    };
+        stream = await navigator.mediaDevices.getUserMedia({
 
+            video: {
+
+                facingMode: {
+                    ideal: "environment"
                 },
 
-                aspectRatio: 1.0,
-
-                disableFlip: false
-
-            };
-
-
-            await html5QrCode.start(
-
-                {
-                    facingMode: "environment"
+                width: {
+                    ideal: 1920
                 },
 
-                config,
+                height: {
+                    ideal: 1080
+                },
 
-                onScanSuccess,
+                frameRate: {
+                    ideal: 30,
+                    max: 30
+                }
 
-                onScanFailure
+            },
 
-            );
+            audio: false
 
-            isScanning = true;
-
-        }
-        catch (error) {
-
-            console.error(error);
-
-            updateStatus(
-                "خطا در دسترسی به دوربین",
-                "bg-red-100 text-red-700"
-            );
-
-            document.getElementById("startBtn").disabled = false;
-
-            document.getElementById("stopBtn").disabled = true;
-
-            alert(
-                "امکان دسترسی به دوربین وجود ندارد.\n\n" +
-                "اگر با فایل HTML اجرا می‌کنید، بهتر است آن را از طریق localhost یا HTTPS اجرا کنید."
-            );
-        }
-
-    }
+        });
 
 
-    // -----------------------------------------
-    // QR Success
-    // -----------------------------------------
+        video.srcObject = stream;
 
-    function onScanSuccess(decodedText, decodedResult) {
 
-        const now = Date.now();
+        await video.play();
+
+
+        currentTrack = stream.getVideoTracks()[0];
+
+
+        console.log(
+            "Camera settings:",
+            currentTrack.getSettings()
+        );
 
 
         /*
-         * جلوگیری از ثبت چندباره همان QR
-         * چون وقتی QR جلوی دوربین باشد ممکن است
-         * چندین بار در ثانیه خوانده شود.
-         */
+        |--------------------------------------------------------------------------
+        | Zoom Support
+        |--------------------------------------------------------------------------
+        */
 
-        if (
-            decodedText === lastScannedText &&
-            now - lastScanTime < duplicateDelay
-        ) {
+        const capabilities =
+            currentTrack.getCapabilities();
 
-            return;
+
+        if (capabilities.zoom) {
+
+            const minZoom =
+                capabilities.zoom.min || 1;
+
+            const maxZoom =
+                Math.min(
+                    capabilities.zoom.max || 3,
+                    3
+                );
+
+
+            const slider =
+                document.getElementById("zoomSlider");
+
+
+            slider.min = minZoom;
+
+            slider.max = maxZoom;
+
+            slider.step =
+                capabilities.zoom.step || 0.1;
+
+            slider.value = minZoom;
+
+
+            document
+                .getElementById("zoomContainer")
+                .classList.remove("hidden");
+
+
+            slider.oninput =
+                async function() {
+
+                    const zoom =
+                        Number(this.value);
+
+
+                    document
+                        .getElementById("zoomValue")
+                        .textContent =
+                        zoom.toFixed(1) + "x";
+
+
+                    try {
+
+                        await currentTrack.applyConstraints({
+
+                            advanced: [
+                                {
+                                    zoom: zoom
+                                }
+                            ]
+
+                        });
+
+                    }
+                    catch (e) {
+
+                        console.log(
+                            "Zoom not supported",
+                            e
+                        );
+
+                    }
+
+                };
 
         }
 
 
-        lastScannedText = decodedText;
-
-        lastScanTime = now;
-
-
-        // بررسی اینکه قبلاً ثبت نشده باشد
-        const alreadyExists = scanResults.some(
-            item => item.qrCode === decodedText
-        );
+        document
+            .getElementById("cameraLoading")
+            .classList.add("hidden");
 
 
-        if (alreadyExists) {
-
-            showLastResult(
-                decodedText,
-                true
-            );
-
-            return;
-
-        }
+        document
+            .getElementById("startBtn")
+            .disabled = true;
 
 
-        // ثبت اطلاعات
-        const result = {
-
-            qrCode: decodedText,
-
-            scanTime: new Date()
-
-        };
+        document
+            .getElementById("stopBtn")
+            .disabled = false;
 
 
-        scanResults.push(result);
-
-
-        addResultToTable(result);
-
-
-        showLastResult(
-            decodedText,
-            false
-        );
+        scanning = true;
 
 
         updateStatus(
-            "QR با موفقیت اسکن شد",
+            "آماده اسکن QR",
             "bg-emerald-100 text-emerald-700"
         );
 
 
-        // بعد از مدت کوتاه دوباره وضعیت را آماده اسکن می‌کنیم
-        setTimeout(() => {
-
-            if (isScanning) {
-
-                updateStatus(
-                    "آماده اسکن QR بعدی",
-                    "bg-blue-100 text-blue-700"
-                );
-
-            }
-
-        }, 1000);
+        startScanning();
 
     }
+    catch (error) {
 
-
-    // -----------------------------------------
-    // QR Failure
-    // -----------------------------------------
-
-    function onScanFailure(error) {
-
-        // اینجا چیزی نمایش نمی‌دهیم.
-        // چون در زمان اسکن، خطای پیدا نشدن QR
-        // کاملاً طبیعی است.
-
-    }
-
-
-    // -----------------------------------------
-    // Stop Scanner
-    // -----------------------------------------
-
-    async function stopScanner() {
-
-        if (!html5QrCode)
-            return;
-
-
-        try {
-
-            await html5QrCode.stop();
-
-            await html5QrCode.clear();
-
-        }
-        catch (error) {
-
-            console.error(error);
-
-        }
-
-
-        html5QrCode = null;
-
-        isScanning = false;
-
-
-        document.getElementById("startBtn").disabled = false;
-
-        document.getElementById("stopBtn").disabled = true;
+        console.error(error);
 
 
         updateStatus(
-            "اسکن متوقف شد",
-            "bg-slate-100 text-slate-600"
+            "خطا در دوربین",
+            "bg-red-100 text-red-700"
+        );
+
+
+        alert(
+            "دسترسی به دوربین امکان‌پذیر نیست.\n\n" +
+            "مطمئن شوید که دسترسی Camera را به مرورگر داده‌اید."
         );
 
     }
 
-
-    // -----------------------------------------
-    // Add Result To Table
-    // -----------------------------------------
-
-    function addResultToTable(result) {
-
-        const emptyRow =
-            document.getElementById("emptyRow");
-
-        if (emptyRow) {
-
-            emptyRow.remove();
-
-        }
+}
 
 
-        const tbody =
-            document.getElementById("resultsBody");
+/*
+|--------------------------------------------------------------------------
+| Scan
+|--------------------------------------------------------------------------
+*/
+
+function startScanning() {
+
+    if (!scanning)
+        return;
 
 
-        const tr =
-            document.createElement("tr");
+    scanFrame();
+
+}
 
 
-        tr.className =
-            "border-b border-slate-100 hover:bg-slate-50";
+/*
+|--------------------------------------------------------------------------
+| Read Camera Frame
+|--------------------------------------------------------------------------
+*/
+
+function scanFrame() {
+
+    if (!scanning)
+        return;
 
 
-        tr.innerHTML = `
+    if (
+        video.readyState !==
+        video.HAVE_ENOUGH_DATA
+    ) {
 
-            <td class="px-5 py-4">
+        scanTimer =
+            setTimeout(scanFrame, 100);
 
-                <div
-                    class="font-mono text-slate-700 break-all">
-                    ${escapeHtml(result.qrCode)}
-                </div>
-
-            </td>
-
-            <td class="px-5 py-4 text-slate-500 whitespace-nowrap">
-
-                ${formatDate(result.scanTime)}
-
-            </td>
-
-        `;
-
-
-        tbody.prepend(tr);
-
-
-        document.getElementById("exportBtn").disabled = false;
+        return;
 
     }
 
 
-    // -----------------------------------------
-    // Last Result
-    // -----------------------------------------
+    /*
+    |--------------------------------------------------------------------------
+    | Camera Resolution
+    |--------------------------------------------------------------------------
+    */
 
-    function showLastResult(text, duplicate) {
+    const width =
+        video.videoWidth;
 
-        const container =
-            document.getElementById("lastResult");
-
-        const value =
-            document.getElementById("lastQr");
-
-
-        container.classList.remove("hidden");
-
-        container.classList.remove("scan-success");
-
-        void container.offsetWidth;
-
-        container.classList.add("scan-success");
+    const height =
+        video.videoHeight;
 
 
-        value.textContent = text;
+    if (!width || !height) {
+
+        scanTimer =
+            setTimeout(scanFrame, 100);
+
+        return;
+
+    }
 
 
-        if (duplicate) {
+    canvas.width = width;
 
-            container.classList.remove(
-                "bg-emerald-50",
-                "border-emerald-200"
-            );
+    canvas.height = height;
 
-            container.classList.add(
-                "bg-amber-50",
-                "border-amber-200"
-            );
 
+    ctx.drawImage(
+        video,
+        0,
+        0,
+        width,
+        height
+    );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | First: Scan Full Image
+    |--------------------------------------------------------------------------
+    */
+
+    const imageData =
+        ctx.getImageData(
+            0,
+            0,
+            width,
+            height
+        );
+
+
+    const code =
+        jsQR(
+            imageData.data,
+            width,
+            height,
+            {
+                inversionAttempts: "attemptBoth"
+            }
+        );
+
+
+    if (code) {
+
+        handleQR(code.data);
+
+        scanTimer =
+            setTimeout(scanFrame, 150);
+
+        return;
+
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Second: Scan Cropped Regions
+    |
+    | برای QR کوچک بسیار مهم است.
+    |--------------------------------------------------------------------------
+    */
+
+    const regions = [
+
+        // مرکز
+        {
+            x: 0.15,
+            y: 0.15,
+            w: 0.70,
+            h: 0.70
+        },
+
+        // بالا چپ
+        {
+            x: 0,
+            y: 0,
+            w: 0.60,
+            h: 0.60
+        },
+
+        // بالا راست
+        {
+            x: 0.40,
+            y: 0,
+            w: 0.60,
+            h: 0.60
+        },
+
+        // پایین چپ
+        {
+            x: 0,
+            y: 0.40,
+            w: 0.60,
+            h: 0.60
+        },
+
+        // پایین راست
+        {
+            x: 0.40,
+            y: 0.40,
+            w: 0.60,
+            h: 0.60
         }
-        else {
 
-            container.classList.remove(
-                "bg-amber-50",
-                "border-amber-200"
+    ];
+
+
+    for (const region of regions) {
+
+        const x =
+            Math.floor(
+                width * region.x
             );
 
-            container.classList.add(
-                "bg-emerald-50",
-                "border-emerald-200"
+        const y =
+            Math.floor(
+                height * region.y
             );
+
+        const w =
+            Math.floor(
+                width * region.w
+            );
+
+        const h =
+            Math.floor(
+                height * region.h
+            );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Crop
+        |--------------------------------------------------------------------------
+        */
+
+        const cropCanvas =
+            document.createElement("canvas");
+
+
+        /*
+        | دو برابر کردن تصویر crop
+        | برای QR های کوچک
+        */
+
+        const scale = 2;
+
+
+        cropCanvas.width =
+            w * scale;
+
+        cropCanvas.height =
+            h * scale;
+
+
+        const cropCtx =
+            cropCanvas.getContext("2d", {
+                willReadFrequently: true
+            });
+
+
+        cropCtx.imageSmoothingEnabled = false;
+
+
+        cropCtx.drawImage(
+
+            video,
+
+            x,
+            y,
+            w,
+            h,
+
+            0,
+            0,
+            w * scale,
+            h * scale
+
+        );
+
+
+        const cropImage =
+            cropCtx.getImageData(
+                0,
+                0,
+                w * scale,
+                h * scale
+            );
+
+
+        const result =
+            jsQR(
+
+                cropImage.data,
+
+                w * scale,
+
+                h * scale,
+
+                {
+                    inversionAttempts:
+                        "attemptBoth"
+                }
+
+            );
+
+
+        if (result) {
+
+            handleQR(result.data);
+
+            break;
 
         }
 
     }
 
 
-    // -----------------------------------------
-    // Status
-    // -----------------------------------------
+    /*
+    |--------------------------------------------------------------------------
+    | حدود 8 فریم در ثانیه
+    |--------------------------------------------------------------------------
+    */
 
-    function updateStatus(text, classes) {
+    scanTimer =
+        setTimeout(
+            scanFrame,
+            120
+        );
 
-        const badge =
-            document.getElementById("statusBadge");
+}
 
 
-        badge.textContent = text;
+/*
+|--------------------------------------------------------------------------
+| QR Found
+|--------------------------------------------------------------------------
+*/
 
-        badge.className =
-            "px-4 py-2 rounded-full text-sm font-medium " +
-            classes;
+function handleQR(value) {
+
+    const now =
+        Date.now();
+
+
+    /*
+    | جلوگیری از چند بار خواندن
+    | همان QR
+    */
+
+    if (
+        value === lastQR &&
+        now - lastQRTime < 2500
+    ) {
+
+        return;
 
     }
 
 
-    // -----------------------------------------
-    // Clear Results
-    // -----------------------------------------
+    lastQR = value;
 
-    function clearResults() {
-
-        if (scanResults.length === 0)
-            return;
+    lastQRTime = now;
 
 
-        if (!confirm("آیا از پاک کردن تمام اطلاعات اطمینان دارید؟"))
-            return;
+    /*
+    | اگر قبلاً ثبت شده
+    */
+
+    const exists =
+        results.some(
+            x => x.qrCode === value
+        );
 
 
-        scanResults = [];
+    if (exists) {
 
-        lastScannedText = null;
+        showLastQR(
+            value,
+            true
+        );
 
-        lastScanTime = 0;
+        return;
+
+    }
 
 
-        document.getElementById("resultsBody").innerHTML = `
+    const item = {
 
-            <tr id="emptyRow">
+        qrCode: value,
+
+        time: new Date()
+
+    };
+
+
+    results.push(item);
+
+
+    addResult(item);
+
+
+    showLastQR(
+        value,
+        false
+    );
+
+
+    updateStatus(
+        "QR شناسایی شد ✓",
+        "bg-emerald-100 text-emerald-700"
+    );
+
+
+    setTimeout(() => {
+
+        if (scanning) {
+
+            updateStatus(
+                "آماده اسکن QR بعدی",
+                "bg-blue-100 text-blue-700"
+            );
+
+        }
+
+    }, 1200);
+
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Add Result
+|--------------------------------------------------------------------------
+*/
+
+function addResult(item) {
+
+    const empty =
+        document.getElementById("empty");
+
+
+    if (empty)
+        empty.remove();
+
+
+    const tr =
+        document.createElement("tr");
+
+
+    tr.className =
+        "border-b border-slate-100";
+
+
+    tr.innerHTML = `
+
+        <td class="px-5 py-4">
+
+            <div class="font-mono text-sm break-all">
+
+                ${escapeHtml(item.qrCode)}
+
+            </div>
+
+        </td>
+
+        <td class="px-5 py-4 text-sm text-slate-500">
+
+            ${formatDate(item.time)}
+
+        </td>
+
+    `;
+
+
+    document
+        .getElementById("results")
+        .prepend(tr);
+
+
+    document
+        .getElementById("count")
+        .textContent =
+        results.length;
+
+
+    document
+        .getElementById("exportBtn")
+        .disabled = false;
+
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Last QR
+|--------------------------------------------------------------------------
+*/
+
+function showLastQR(
+    value,
+    duplicate
+) {
+
+    const box =
+        document.getElementById(
+            "lastResult"
+        );
+
+
+    const text =
+        document.getElementById(
+            "lastQr"
+        );
+
+
+    box.classList.remove(
+        "hidden"
+    );
+
+
+    text.textContent =
+        value;
+
+
+    if (duplicate) {
+
+        box.className =
+            "bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-5";
+
+    }
+    else {
+
+        box.className =
+            "bg-emerald-50 border border-emerald-200 rounded-2xl p-4 mb-5 success-animation";
+
+    }
+
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Stop Camera
+|--------------------------------------------------------------------------
+*/
+
+function stopCamera() {
+
+    scanning = false;
+
+
+    if (scanTimer) {
+
+        clearTimeout(scanTimer);
+
+        scanTimer = null;
+
+    }
+
+
+    if (stream) {
+
+        stream
+            .getTracks()
+            .forEach(
+                track => track.stop()
+            );
+
+        stream = null;
+
+    }
+
+
+    video.srcObject = null;
+
+    currentTrack = null;
+
+
+    document
+        .getElementById("startBtn")
+        .disabled = false;
+
+
+    document
+        .getElementById("stopBtn")
+        .disabled = true;
+
+
+    document
+        .getElementById("cameraLoading")
+        .classList.remove("hidden");
+
+
+    document
+        .getElementById("zoomContainer")
+        .classList.add("hidden");
+
+
+    updateStatus(
+        "اسکن متوقف شد",
+        "bg-slate-100 text-slate-600"
+    );
+
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Clear
+|--------------------------------------------------------------------------
+*/
+
+function clearResults() {
+
+    results = [];
+
+    lastQR = "";
+
+    lastQRTime = 0;
+
+
+    document
+        .getElementById("results")
+        .innerHTML = `
+
+            <tr id="empty">
 
                 <td
                     colspan="2"
-                    class="text-center py-12 text-slate-400">
+                    class="text-center py-10 text-slate-400">
 
-                    هنوز QR ای اسکن نشده است
+                    هنوز QR اسکن نشده است
 
                 </td>
 
@@ -673,137 +1153,169 @@
         `;
 
 
-        document.getElementById("exportBtn").disabled = true;
+    document
+        .getElementById("count")
+        .textContent = "0";
 
-    }
+
+    document
+        .getElementById("exportBtn")
+        .disabled = true;
+
+}
 
 
-    // -----------------------------------------
-    // Export Excel
-    // -----------------------------------------
+/*
+|--------------------------------------------------------------------------
+| Excel
+|--------------------------------------------------------------------------
+*/
 
-    function exportExcel() {
+function exportExcel() {
 
-        if (scanResults.length === 0) {
+    if (!results.length)
+        return;
 
-            alert("هیچ اطلاعاتی برای خروجی وجود ندارد.");
 
-            return;
+    const data =
+        results.map((item, index) => ({
 
+            "ردیف":
+                index + 1,
+
+            "QR Code":
+                item.qrCode,
+
+            "زمان اسکن":
+                formatDate(item.time)
+
+        }));
+
+
+    const worksheet =
+        XLSX.utils.json_to_sheet(data);
+
+
+    worksheet["!cols"] = [
+
+        {
+            wch: 8
+        },
+
+        {
+            wch: 70
+        },
+
+        {
+            wch: 25
         }
 
-
-        const excelData =
-            scanResults.map(item => ({
-
-                "QR Code": item.qrCode,
-
-                "زمان اسکن": formatDate(item.scanTime)
-
-            }));
+    ];
 
 
-        const worksheet =
-            XLSX.utils.json_to_sheet(excelData);
+    const workbook =
+        XLSX.utils.book_new();
 
 
-        // تنظیم عرض ستون‌ها
-        worksheet["!cols"] = [
-
-            {
-                wch: 60
-            },
-
-            {
-                wch: 25
-            }
-
-        ];
+    XLSX.utils.book_append_sheet(
+        workbook,
+        worksheet,
+        "QR دسته چک"
+    );
 
 
-        const workbook =
-            XLSX.utils.book_new();
+    XLSX.writeFile(
+        workbook,
+        "Cheque_QR.xlsx"
+    );
+
+}
 
 
-        XLSX.utils.book_append_sheet(
-            workbook,
-            worksheet,
-            "QR Codes"
+/*
+|--------------------------------------------------------------------------
+| Status
+|--------------------------------------------------------------------------
+*/
+
+function updateStatus(
+    text,
+    classes
+) {
+
+    const status =
+        document.getElementById(
+            "status"
         );
 
 
-        const fileName =
-            "Cheque_QR_" +
-            getFileDate() +
-            ".xlsx";
+    status.textContent =
+        text;
 
 
-        XLSX.writeFile(
-            workbook,
-            fileName
-        );
+    status.className =
+        "px-4 py-2 rounded-full text-sm " +
+        classes;
 
-    }
-
-
-    // -----------------------------------------
-    // Date
-    // -----------------------------------------
-
-    function formatDate(date) {
-
-        return date.toLocaleString(
-            "fa-IR",
-            {
-                year: "numeric",
-                month: "2-digit",
-                day: "2-digit",
-                hour: "2-digit",
-                minute: "2-digit",
-                second: "2-digit"
-            }
-        );
-
-    }
+}
 
 
-    function getFileDate() {
+/*
+|--------------------------------------------------------------------------
+| Date
+|--------------------------------------------------------------------------
+*/
 
-        const d = new Date();
+function formatDate(date) {
 
-        return (
+    return date.toLocaleString(
+        "fa-IR",
+        {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit"
+        }
+    );
 
-            d.getFullYear() +
-
-            String(d.getMonth() + 1).padStart(2, "0") +
-
-            String(d.getDate()).padStart(2, "0") +
-
-            "_" +
-
-            String(d.getHours()).padStart(2, "0") +
-
-            String(d.getMinutes()).padStart(2, "0")
-
-        );
-
-    }
+}
 
 
-    // -----------------------------------------
-    // Security
-    // -----------------------------------------
+/*
+|--------------------------------------------------------------------------
+| Escape HTML
+|--------------------------------------------------------------------------
+*/
 
-    function escapeHtml(text) {
+function escapeHtml(text) {
 
-        const div =
-            document.createElement("div");
+    const div =
+        document.createElement("div");
 
-        div.textContent = text;
+    div.textContent =
+        text;
 
-        return div.innerHTML;
+    return div.innerHTML;
+
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Page Close
+|--------------------------------------------------------------------------
+*/
+
+window.addEventListener(
+    "beforeunload",
+    () => {
+
+        stopCamera();
 
     }
+);
 
 </script>
 
