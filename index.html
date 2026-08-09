@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>اسکنر QR چک‌ها</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: Tahoma, Vazirmatn, sans-serif;
+    background: #0f172a;
+    color: #e2e8f0;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+  }
+  h1 {
+    font-size: 20px;
+    margin-bottom: 4px;
+  }
+  .sub {
+    color: #94a3b8;
+    font-size: 13px;
+    margin-bottom: 16px;
+  }
+  #video-wrap {
+    position: relative;
+    width: 100%;
+    max-width: 420px;
+    border-radius: 16px;
+    overflow: hidden;
+    background: #000;
+    display: none;
+    box-shadow: 0 0 0 2px #334155;
+  }
+  video {
+    width: 100%;
+    display: block;
+  }
+  .scan-box {
+    position: absolute;
+    top: 15%; left: 15%; right: 15%; bottom: 15%;
+    border: 3px solid #22c55e;
+    border-radius: 12px;
+    box-shadow: 0 0 0 2000px rgba(0,0,0,0.35);
+    pointer-events: none;
+  }
+  .controls {
+    display: flex;
+    gap: 10px;
+    margin: 18px 0;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  button {
+    font-family: inherit;
+    font-size: 15px;
+    padding: 12px 22px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.15s;
+  }
+  button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  #startBtn { background: #22c55e; color: #052e12; }
+  #startBtn:hover:not(:disabled) { background: #16a34a; }
+  #stopBtn { background: #ef4444; color: #2b0505; }
+  #stopBtn:hover:not(:disabled) { background: #dc2626; }
+  #resetBtn { background: #334155; color: #e2e8f0; }
+  #resetBtn:hover:not(:disabled) { background: #475569; }
+  #exportBtn { background: #3b82f6; color: #05122b; }
+  #exportBtn:hover:not(:disabled) { background: #2563eb; }
+
+  #progress {
+    font-size: 15px;
+    margin-top: 10px;
+    color: #cbd5e1;
+  }
+  #progress b { color: #22c55e; }
+
+  table {
+    width: 100%;
+    max-width: 640px;
+    margin-top: 20px;
+    border-collapse: collapse;
+    background: #1e293b;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  th, td {
+    padding: 10px 12px;
+    text-align: right;
+    font-size: 13px;
+    border-bottom: 1px solid #334155;
+  }
+  th {
+    background: #0f172a;
+    color: #94a3b8;
+  }
+  tr:last-child td { border-bottom: none; }
+  td.data-col {
+    word-break: break-all;
+    max-width: 260px;
+  }
+  .del-btn {
+    background: #7f1d1d;
+    color: #fecaca;
+    padding: 4px 10px;
+    font-size: 12px;
+    border-radius: 6px;
+  }
+  #status {
+    font-size: 13px;
+    color: #f87171;
+    margin-top: 8px;
+    min-height: 18px;
+  }
+  .count-input {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .count-input input {
+    width: 60px;
+    padding: 6px 8px;
+    border-radius: 8px;
+    border: 1px solid #334155;
+    background: #1e293b;
+    color: #e2e8f0;
+    font-size: 14px;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<h1>📷 اسکن QR چک‌ها</h1>
+<div class="sub">دکمه شروع رو بزن و QR هر چک رو جلوی دوربین بگیر</div>
+
+<div class="count-input">
+  <label>تعداد چک‌ها:</label>
+  <input type="number" id="targetCount" value="10" min="1" max="200">
+</div>
+
+<div class="controls">
+  <button id="startBtn">▶️ شروع اسکن</button>
+  <button id="stopBtn" disabled>⏹️ توقف</button>
+  <button id="resetBtn">🗑️ پاک کردن لیست</button>
+  <button id="exportBtn" disabled>📥 دانلود اکسل</button>
+</div>
+
+<div id="video-wrap">
+  <video id="video" playsinline muted></video>
+  <div class="scan-box"></div>
+</div>
+<canvas id="canvas" style="display:none;"></canvas>
+
+<div id="progress">اسکن‌شده: <b id="countNum">0</b> / <span id="targetNum">10</span></div>
+<div id="status"></div>
+
+<table id="resultTable" style="display:none;">
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>محتوای QR</th>
+      <th>زمان اسکن</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody id="resultBody"></tbody>
+</table>
+
+<script>
+const video = document.getElementById('video');
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const videoWrap = document.getElementById('video-wrap');
+
+const startBtn = document.getElementById('startBtn');
+const stopBtn = document.getElementById('stopBtn');
+const resetBtn = document.getElementById('resetBtn');
+const exportBtn = document.getElementById('exportBtn');
+const targetInput = document.getElementById('targetCount');
+
+const countNum = document.getElementById('countNum');
+const targetNum = document.getElementById('targetNum');
+const statusEl = document.getElementById('status');
+const resultTable = document.getElementById('resultTable');
+const resultBody = document.getElementById('resultBody');
+
+let stream = null;
+let scanning = false;
+let rafId = null;
+let scannedItems = []; // {data, time}
+let targetCount = 10;
+
+targetInput.addEventListener('change', () => {
+  targetCount = Math.max(1, parseInt(targetInput.value) || 10);
+  targetNum.textContent = targetCount;
+});
+
+function beep() {
+  try {
+    const ctxAudio = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctxAudio.createOscillator();
+    const gain = ctxAudio.createGain();
+    osc.connect(gain);
+    gain.connect(ctxAudio.destination);
+    osc.frequency.value = 880;
+    gain.gain.setValueAtTime(0.15, ctxAudio.currentTime);
+    osc.start();
+    osc.stop(ctxAudio.currentTime + 0.12);
+  } catch (e) {}
+}
+
+async function startScan() {
+  statusEl.textContent = '';
+  targetCount = Math.max(1, parseInt(targetInput.value) || 10);
+  targetNum.textContent = targetCount;
+
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment' }
+    });
+  } catch (err) {
+    statusEl.textContent = 'دسترسی به دوربین ممکن نشد: ' + err.message;
+    return;
+  }
+
+  video.srcObject = stream;
+  await video.play();
+
+  videoWrap.style.display = 'block';
+  startBtn.disabled = true;
+  stopBtn.disabled = false;
+  targetInput.disabled = true;
+  scanning = true;
+
+  tick();
+}
+
+function stopScan(finished) {
+  scanning = false;
+  if (rafId) cancelAnimationFrame(rafId);
+  if (stream) {
+    stream.getTracks().forEach(t => t.stop());
+    stream = null;
+  }
+  videoWrap.style.display = 'none';
+  startBtn.disabled = false;
+  stopBtn.disabled = true;
+  targetInput.disabled = false;
+
+  if (finished) {
+    statusEl.style.color = '#4ade80';
+    statusEl.textContent = `✅ اسکن ${scannedItems.length} چک با موفقیت انجام شد.`;
+  }
+}
+
+function tick() {
+  if (!scanning) return;
+
+  if (video.readyState === video.HAVE_ENOUGH_DATA) {
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const code = jsQR(imageData.data, imageData.width, imageData.height, {
+      inversionAttempts: 'dontInvert'
+    });
+
+    if (code && code.data) {
+      handleDetected(code.data);
+    }
+  }
+
+  rafId = requestAnimationFrame(tick);
+}
+
+function handleDetected(data) {
+  // جلوگیری از ثبت تکراری پشت‌سرهم همون کد
+  const last = scannedItems[scannedItems.length - 1];
+  if (last && last.data === data) return;
+
+  scannedItems.push({
+    data: data,
+    time: new Date().toLocaleTimeString('fa-IR')
+  });
+
+  beep();
+  renderTable();
+
+  countNum.textContent = scannedItems.length;
+  exportBtn.disabled = scannedItems.length === 0;
+
+  if (scannedItems.length >= targetCount) {
+    stopScan(true);
+  }
+}
+
+function renderTable() {
+  resultTable.style.display = scannedItems.length ? 'table' : 'none';
+  resultBody.innerHTML = '';
+  scannedItems.forEach((item, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${i + 1}</td>
+      <td class="data-col">${escapeHtml(item.data)}</td>
+      <td>${item.time}</td>
+      <td><button class="del-btn" data-idx="${i}">حذف</button></td>
+    `;
+    resultBody.appendChild(tr);
+  });
+
+  document.querySelectorAll('.del-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const idx = parseInt(e.target.dataset.idx);
+      scannedItems.splice(idx, 1);
+      countNum.textContent = scannedItems.length;
+      exportBtn.disabled = scannedItems.length === 0;
+      renderTable();
+    });
+  });
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function exportExcel() {
+  if (scannedItems.length === 0) return;
+
+  const rows = scannedItems.map((item, i) => ({
+    'ردیف': i + 1,
+    'محتوای QR': item.data,
+    'زمان اسکن': item.time
+  }));
+
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = [{ wch: 6 }, { wch: 50 }, { wch: 15 }];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'چک‌ها');
+
+  const now = new Date();
+  const fileName = `cheks_${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}.xlsx`;
+
+  XLSX.writeFile(wb, fileName);
+}
+
+function resetAll() {
+  scannedItems = [];
+  countNum.textContent = 0;
+  exportBtn.disabled = true;
+  renderTable();
+  statusEl.textContent = '';
+}
+
+startBtn.addEventListener('click', startScan);
+stopBtn.addEventListener('click', () => stopScan(false));
+resetBtn.addEventListener('click', resetAll);
+exportBtn.addEventListener('click', exportExcel);
+</script>
+
+</body>
+</html>
