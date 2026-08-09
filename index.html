@@ -3,62 +3,206 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
     <title>اسکن QR دسته چک</title>
 
+    <!-- Tailwind -->
     <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- QR Decoder -->
+    <!-- jsQR fallback -->
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 
     <!-- Excel -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
+
     <style>
 
-        body {
-            font-family: Tahoma, Arial, sans-serif;
+        * {
+            box-sizing: border-box;
         }
 
+        body {
+            margin: 0;
+            font-family:
+                Tahoma,
+                Arial,
+                sans-serif;
+            background: #f1f5f9;
+        }
+
+
+        /* ---------------------------------------------
+           Camera
+        --------------------------------------------- */
+
+        .camera-wrapper {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 4 / 3;
+            overflow: hidden;
+            border-radius: 20px;
+            background: #020617;
+        }
+
+
         #video {
+            position: absolute;
+            inset: 0;
+
+            width: 100%;
+            height: 100%;
+
+            object-fit: cover;
+
             transform: scaleX(1);
         }
 
+
+        /* ---------------------------------------------
+           Scanner Overlay
+        --------------------------------------------- */
+
+        .scanner-overlay {
+            position: absolute;
+            inset: 0;
+
+            pointer-events: none;
+        }
+
+
+        .scanner-box {
+            position: absolute;
+
+            width: 70%;
+            aspect-ratio: 1 / 1;
+
+            left: 50%;
+            top: 50%;
+
+            transform: translate(-50%, -50%);
+
+            border: 2px solid rgba(255,255,255,.9);
+
+            border-radius: 18px;
+
+            box-shadow:
+                0 0 0 9999px rgba(0,0,0,.28);
+        }
+
+
+        .corner {
+            position: absolute;
+
+            width: 42px;
+            height: 42px;
+
+            border-color: #22c55e;
+        }
+
+
+        .corner.tl {
+            left: -2px;
+            top: -2px;
+
+            border-left: 5px solid;
+            border-top: 5px solid;
+
+            border-radius: 8px 0 0 0;
+        }
+
+
+        .corner.tr {
+            right: -2px;
+            top: -2px;
+
+            border-right: 5px solid;
+            border-top: 5px solid;
+
+            border-radius: 0 8px 0 0;
+        }
+
+
+        .corner.bl {
+            left: -2px;
+            bottom: -2px;
+
+            border-left: 5px solid;
+            border-bottom: 5px solid;
+
+            border-radius: 0 0 0 8px;
+        }
+
+
+        .corner.br {
+            right: -2px;
+            bottom: -2px;
+
+            border-right: 5px solid;
+            border-bottom: 5px solid;
+
+            border-radius: 0 0 8px 0;
+        }
+
+
+        /* ---------------------------------------------
+           Scan line
+        --------------------------------------------- */
+
         .scan-line {
             position: absolute;
+
             left: 5%;
             right: 5%;
+
             height: 2px;
+
             background: #22c55e;
-            box-shadow: 0 0 10px #22c55e;
-            animation: scanLine 2s linear infinite;
+
+            box-shadow:
+                0 0 10px #22c55e,
+                0 0 20px #22c55e;
+
+            animation:
+                scanLine 2s ease-in-out infinite;
         }
+
 
         @keyframes scanLine {
 
             0% {
-                top: 10%;
+                top: 7%;
             }
 
             50% {
-                top: 90%;
+                top: 93%;
             }
 
             100% {
-                top: 10%;
+                top: 7%;
             }
 
         }
 
+
+        /* ---------------------------------------------
+           Success
+        --------------------------------------------- */
+
         .success-animation {
-            animation: success 0.4s ease;
+            animation:
+                successAnimation .4s ease;
         }
 
-        @keyframes success {
+
+        @keyframes successAnimation {
 
             0% {
-                transform: scale(.95);
+                transform: scale(.96);
             }
 
             50% {
@@ -71,35 +215,65 @@
 
         }
 
+
+        /* ---------------------------------------------
+           Mobile
+        --------------------------------------------- */
+
+        @media(max-width:640px) {
+
+            .scanner-box {
+                width: 76%;
+            }
+
+            .corner {
+                width: 36px;
+                height: 36px;
+            }
+
+        }
+
     </style>
 
 </head>
 
-<body class="bg-slate-100 min-h-screen">
 
-<div class="max-w-5xl mx-auto p-5">
+<body>
 
-    <!-- Header -->
+<div class="max-w-4xl mx-auto px-4 py-6">
 
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mb-5">
 
-        <div class="flex items-center justify-between">
+    <!-- =====================================================
+         HEADER
+    ====================================================== -->
+
+    <div
+        class="bg-white rounded-3xl border border-slate-200 shadow-sm p-5 mb-5">
+
+        <div class="flex items-center justify-between gap-4">
 
             <div>
 
-                <h1 class="text-xl font-bold text-slate-800">
-                    اسکن QR دسته‌چک
+                <h1
+                    class="text-xl sm:text-2xl font-bold text-slate-800">
+
+                    اسکن QR دسته چک
+
                 </h1>
 
-                <p class="text-sm text-slate-500 mt-1">
-                    دسته‌چک را مقابل دوربین قرار دهید
+                <p
+                    class="text-sm text-slate-500 mt-2 leading-7">
+
+                    QR دسته‌چک را داخل کادر قرار دهید
+
                 </p>
 
             </div>
 
+
             <div
                 id="status"
-                class="px-4 py-2 rounded-full bg-slate-100 text-slate-600 text-sm">
+                class="shrink-0 px-4 py-2 rounded-full bg-slate-100 text-slate-600 text-xs sm:text-sm">
 
                 آماده
 
@@ -110,62 +284,100 @@
     </div>
 
 
-    <!-- Camera -->
 
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 mb-5">
+    <!-- =====================================================
+         CAMERA
+    ====================================================== -->
 
-        <div
-            class="relative overflow-hidden rounded-2xl bg-black aspect-video">
+    <div
+        class="bg-white rounded-3xl border border-slate-200 shadow-sm p-4 mb-5">
+
+
+        <div class="camera-wrapper">
 
             <video
                 id="video"
                 autoplay
                 muted
-                playsinline
-                class="w-full h-full object-cover">
+                playsinline>
             </video>
 
 
-            <!-- Scan Overlay -->
+            <div
+                id="cameraOff"
+                class="absolute inset-0 flex items-center justify-center bg-slate-950 text-white z-20">
 
-            <div class="absolute inset-0 pointer-events-none">
+                <div class="text-center">
 
-                <div
-                    class="absolute inset-[8%] border-2 border-white/60 rounded-xl">
+                    <div class="text-4xl mb-3">
+                        📷
+                    </div>
 
-                </div>
+                    <div class="text-sm">
+                        دوربین خاموش است
+                    </div>
 
-                <div
-                    class="scan-line">
                 </div>
 
             </div>
 
 
-            <!-- Camera loading -->
+            <!-- Scanner overlay -->
 
             <div
-                id="cameraLoading"
-                class="absolute inset-0 flex items-center justify-center bg-black/70 text-white">
+                id="scannerOverlay"
+                class="scanner-overlay hidden">
 
-                دوربین خاموش است
+                <div class="scanner-box">
+
+                    <div class="corner tl"></div>
+                    <div class="corner tr"></div>
+                    <div class="corner bl"></div>
+                    <div class="corner br"></div>
+
+                    <div class="scan-line"></div>
+
+                </div>
+
+            </div>
+
+
+            <!-- Processing -->
+
+            <div
+                id="processing"
+                class="hidden absolute bottom-4 left-1/2 -translate-x-1/2 z-30">
+
+                <div
+                    class="bg-black/70 text-white rounded-full px-4 py-2 text-xs">
+
+                    در حال بررسی QR...
+
+                </div>
 
             </div>
 
         </div>
 
 
-        <!-- Zoom -->
+        <!-- =================================================
+             ZOOM
+        ================================================== -->
 
         <div
             id="zoomContainer"
-            class="hidden mt-4">
+            class="hidden mt-5 bg-slate-50 rounded-2xl p-4">
 
-            <div class="flex items-center gap-3">
+            <div
+                class="flex items-center gap-3">
 
-                <span class="text-sm text-slate-600">
-                    بزرگنمایی
+                <span
+                    class="text-sm text-slate-600 whitespace-nowrap">
+
+                    زوم
+
                 </span>
+
 
                 <input
                     id="zoomSlider"
@@ -176,9 +388,10 @@
                     value="1"
                     class="flex-1">
 
+
                 <span
                     id="zoomValue"
-                    class="text-sm text-slate-600 w-12 text-center">
+                    class="text-sm font-medium text-slate-700 w-12 text-center">
 
                     1x
 
@@ -189,14 +402,18 @@
         </div>
 
 
-        <!-- Buttons -->
+        <!-- =================================================
+             BUTTONS
+        ================================================== -->
 
-        <div class="flex gap-3 mt-5">
+        <div
+            class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-5">
+
 
             <button
                 id="startBtn"
                 onclick="startCamera()"
-                class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-medium">
+                class="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-medium py-3.5 rounded-2xl transition">
 
                 📷 شروع اسکن
 
@@ -207,50 +424,107 @@
                 id="stopBtn"
                 onclick="stopCamera()"
                 disabled
-                class="flex-1 bg-red-500 hover:bg-red-600 disabled:bg-slate-200 disabled:text-slate-400 text-white py-3 rounded-xl font-medium">
+                class="bg-red-500 hover:bg-red-600 disabled:bg-slate-200 disabled:text-slate-400 text-white font-medium py-3.5 rounded-2xl transition">
 
-                ⏹ توقف
+                ⏹ توقف اسکن
 
             </button>
 
         </div>
 
+
+        <!-- Hint -->
+
+        <div
+            class="mt-4 text-center text-xs text-slate-400 leading-6">
+
+            QR را تا حد امکان نزدیک کنید تا داخل کادر بزرگ و واضح دیده شود.
+
+        </div>
+
     </div>
 
 
-    <!-- Last QR -->
+
+    <!-- =====================================================
+         LAST RESULT
+    ====================================================== -->
 
     <div
         id="lastResult"
-        class="hidden bg-emerald-50 border border-emerald-200 rounded-2xl p-4 mb-5">
-
-        <div class="text-sm text-emerald-600 font-semibold">
-            QR شناسایی شد
-        </div>
+        class="hidden rounded-3xl p-5 mb-5 border">
 
         <div
-            id="lastQr"
-            class="font-mono text-slate-800 mt-2 break-all">
+            class="flex gap-3 items-start">
+
+            <div
+                id="resultIcon"
+                class="w-11 h-11 shrink-0 rounded-full flex items-center justify-center text-xl">
+
+                ✓
+
+            </div>
+
+
+            <div
+                class="min-w-0 flex-1">
+
+                <div
+                    id="resultTitle"
+                    class="font-bold">
+
+                    QR شناسایی شد
+
+                </div>
+
+
+                <div
+                    id="lastQr"
+                    class="font-mono text-sm mt-2 break-all text-slate-700">
+
+                </div>
+
+            </div>
+
         </div>
 
     </div>
 
 
-    <!-- Results -->
 
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+    <!-- =====================================================
+         RESULTS
+    ====================================================== -->
 
-        <div class="p-5 border-b flex items-center justify-between">
+    <div
+        class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+
+
+        <div
+            class="p-5 border-b border-slate-200 flex items-center justify-between gap-3">
 
             <div>
 
-                <h2 class="font-bold text-slate-800">
+                <h2
+                    class="font-bold text-slate-800">
+
                     QR های اسکن شده
+
                 </h2>
 
-                <p class="text-sm text-slate-500 mt-1">
-                    تعداد اسکن شده:
-                    <span id="count">0</span>
+
+                <p
+                    class="text-xs text-slate-500 mt-1">
+
+                    تعداد:
+                    <span
+                        id="count"
+                        class="font-bold text-blue-600">
+
+                        0
+
+                    </span>
+
                 </p>
 
             </div>
@@ -258,7 +532,7 @@
 
             <button
                 onclick="clearResults()"
-                class="text-red-500 text-sm">
+                class="text-sm text-red-500 hover:text-red-700">
 
                 پاک کردن
 
@@ -267,20 +541,40 @@
         </div>
 
 
-        <div class="overflow-x-auto">
+        <div
+            class="overflow-x-auto">
 
-            <table class="w-full">
 
-                <thead class="bg-slate-50">
+            <table
+                class="w-full text-sm">
+
+
+                <thead
+                    class="bg-slate-50">
 
                 <tr>
 
-                    <th class="text-right px-5 py-3 text-sm">
-                        QR Code
+                    <th
+                        class="text-right px-5 py-4 text-slate-600">
+
+                        ردیف
+
                     </th>
 
-                    <th class="text-right px-5 py-3 text-sm">
+
+                    <th
+                        class="text-right px-5 py-4 text-slate-600">
+
+                        QR Code
+
+                    </th>
+
+
+                    <th
+                        class="text-right px-5 py-4 text-slate-600 whitespace-nowrap">
+
                         زمان
+
                     </th>
 
                 </tr>
@@ -293,10 +587,10 @@
                 <tr id="empty">
 
                     <td
-                        colspan="2"
-                        class="text-center py-10 text-slate-400">
+                        colspan="3"
+                        class="text-center py-12 text-slate-400">
 
-                        هنوز QR اسکن نشده است
+                        هنوز QR ای اسکن نشده است
 
                     </td>
 
@@ -309,15 +603,18 @@
         </div>
 
 
-        <div class="p-5 border-t">
+        <!-- Export -->
+
+        <div
+            class="p-5 border-t border-slate-200">
 
             <button
                 id="exportBtn"
                 onclick="exportExcel()"
                 disabled
-                class="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-200 disabled:text-slate-400 text-white py-3 rounded-xl font-medium">
+                class="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-200 disabled:text-slate-400 text-white font-medium py-3.5 rounded-2xl transition">
 
-                📊 خروجی Excel
+                📊 دریافت خروجی Excel
 
             </button>
 
@@ -328,7 +625,10 @@
 </div>
 
 
-<!-- Hidden Canvas -->
+
+<!-- =========================================================
+     HIDDEN CANVASES
+========================================================== -->
 
 <canvas
     id="canvas"
@@ -336,29 +636,99 @@
 </canvas>
 
 
+<canvas
+    id="processingCanvas"
+    class="hidden">
+</canvas>
+
+
+
 <script>
 
-let video = document.getElementById("video");
+/*
+|--------------------------------------------------------------------------
+| Variables
+|--------------------------------------------------------------------------
+*/
 
-let canvas = document.getElementById("canvas");
+let video =
+    document.getElementById("video");
 
-let ctx = canvas.getContext("2d", {
-    willReadFrequently: true
-});
+let canvas =
+    document.getElementById("canvas");
+
+let processingCanvas =
+    document.getElementById("processingCanvas");
+
+let ctx =
+    canvas.getContext(
+        "2d",
+        {
+            willReadFrequently: true
+        }
+    );
+
+let processingCtx =
+    processingCanvas.getContext(
+        "2d",
+        {
+            willReadFrequently: true
+        }
+    );
+
 
 let stream = null;
 
+let track = null;
+
 let scanning = false;
 
-let scanTimer = null;
+let scanTimeout = null;
 
 let results = [];
 
-let lastQR = "";
+let lastDecodedValue = "";
 
-let lastQRTime = 0;
+let lastDecodedTime = 0;
 
-let currentTrack = null;
+
+/*
+|--------------------------------------------------------------------------
+| Barcode Detector
+|--------------------------------------------------------------------------
+*/
+
+let barcodeDetector = null;
+
+
+if (
+    "BarcodeDetector" in window
+) {
+
+    try {
+
+        barcodeDetector =
+            new BarcodeDetector({
+                formats: [
+                    "qr_code"
+                ]
+            });
+
+        console.log(
+            "BarcodeDetector available"
+        );
+
+    }
+    catch (error) {
+
+        console.log(
+            "BarcodeDetector unavailable",
+            error
+        );
+
+    }
+
+}
 
 
 /*
@@ -369,6 +739,10 @@ let currentTrack = null;
 
 async function startCamera() {
 
+    if (scanning)
+        return;
+
+
     try {
 
         updateStatus(
@@ -377,133 +751,135 @@ async function startCamera() {
         );
 
 
-        stream = await navigator.mediaDevices.getUserMedia({
+        /*
+        |--------------------------------------------------------------------------
+        | Request high quality camera
+        |--------------------------------------------------------------------------
+        */
 
-            video: {
+        stream =
+            await navigator.mediaDevices.getUserMedia({
 
-                facingMode: {
-                    ideal: "environment"
+                video: {
+
+                    facingMode: {
+                        ideal: "environment"
+                    },
+
+                    width: {
+                        ideal: 2560
+                    },
+
+                    height: {
+                        ideal: 1440
+                    },
+
+                    frameRate: {
+                        ideal: 30,
+                        max: 30
+                    }
+
                 },
 
-                width: {
-                    ideal: 1920
-                },
+                audio: false
 
-                height: {
-                    ideal: 1080
-                },
-
-                frameRate: {
-                    ideal: 30,
-                    max: 30
-                }
-
-            },
-
-            audio: false
-
-        });
+            });
 
 
-        video.srcObject = stream;
+        video.srcObject =
+            stream;
 
 
         await video.play();
 
 
-        currentTrack = stream.getVideoTracks()[0];
+        track =
+            stream.getVideoTracks()[0];
+
+
+        const settings =
+            track.getSettings();
 
 
         console.log(
             "Camera settings:",
-            currentTrack.getSettings()
+            settings
+        );
+
+
+        const capabilities =
+            track.getCapabilities
+                ? track.getCapabilities()
+                : {};
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Autofocus
+        |--------------------------------------------------------------------------
+        */
+
+        if (
+            capabilities.focusMode &&
+            capabilities.focusMode.includes("continuous")
+        ) {
+
+            try {
+
+                await track.applyConstraints({
+
+                    advanced: [
+
+                        {
+                            focusMode: "continuous"
+                        }
+
+                    ]
+
+                });
+
+                console.log(
+                    "Continuous autofocus enabled"
+                );
+
+            }
+            catch (e) {
+
+                console.log(
+                    "Could not enable autofocus",
+                    e
+                );
+
+            }
+
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Zoom
+        |--------------------------------------------------------------------------
+        */
+
+        setupZoom(
+            capabilities
         );
 
 
         /*
         |--------------------------------------------------------------------------
-        | Zoom Support
+        | UI
         |--------------------------------------------------------------------------
         */
 
-        const capabilities =
-            currentTrack.getCapabilities();
-
-
-        if (capabilities.zoom) {
-
-            const minZoom =
-                capabilities.zoom.min || 1;
-
-            const maxZoom =
-                Math.min(
-                    capabilities.zoom.max || 3,
-                    3
-                );
-
-
-            const slider =
-                document.getElementById("zoomSlider");
-
-
-            slider.min = minZoom;
-
-            slider.max = maxZoom;
-
-            slider.step =
-                capabilities.zoom.step || 0.1;
-
-            slider.value = minZoom;
-
-
-            document
-                .getElementById("zoomContainer")
-                .classList.remove("hidden");
-
-
-            slider.oninput =
-                async function() {
-
-                    const zoom =
-                        Number(this.value);
-
-
-                    document
-                        .getElementById("zoomValue")
-                        .textContent =
-                        zoom.toFixed(1) + "x";
-
-
-                    try {
-
-                        await currentTrack.applyConstraints({
-
-                            advanced: [
-                                {
-                                    zoom: zoom
-                                }
-                            ]
-
-                        });
-
-                    }
-                    catch (e) {
-
-                        console.log(
-                            "Zoom not supported",
-                            e
-                        );
-
-                    }
-
-                };
-
-        }
+        document
+            .getElementById("cameraOff")
+            .classList.add("hidden");
 
 
         document
-            .getElementById("cameraLoading")
-            .classList.add("hidden");
+            .getElementById("scannerOverlay")
+            .classList.remove("hidden");
 
 
         document
@@ -525,12 +901,21 @@ async function startCamera() {
         );
 
 
-        startScanning();
+        /*
+        |--------------------------------------------------------------------------
+        | Start decoder
+        |--------------------------------------------------------------------------
+        */
+
+        scanLoop();
 
     }
     catch (error) {
 
-        console.error(error);
+        console.error(
+            "Camera error:",
+            error
+        );
 
 
         updateStatus(
@@ -541,7 +926,7 @@ async function startCamera() {
 
         alert(
             "دسترسی به دوربین امکان‌پذیر نیست.\n\n" +
-            "مطمئن شوید که دسترسی Camera را به مرورگر داده‌اید."
+            "مطمئن شوید مجوز Camera را به مرورگر داده‌اید."
         );
 
     }
@@ -551,28 +936,127 @@ async function startCamera() {
 
 /*
 |--------------------------------------------------------------------------
-| Scan
+| Zoom
 |--------------------------------------------------------------------------
 */
 
-function startScanning() {
+function setupZoom(
+    capabilities
+) {
 
-    if (!scanning)
+    const container =
+        document.getElementById(
+            "zoomContainer"
+        );
+
+
+    const slider =
+        document.getElementById(
+            "zoomSlider"
+        );
+
+
+    const value =
+        document.getElementById(
+            "zoomValue"
+        );
+
+
+    if (
+        !capabilities.zoom
+    ) {
+
+        container.classList.add(
+            "hidden"
+        );
+
         return;
 
+    }
 
-    scanFrame();
+
+    const min =
+        capabilities.zoom.min || 1;
+
+    const max =
+        Math.min(
+            capabilities.zoom.max || 3,
+            4
+        );
+
+    const step =
+        capabilities.zoom.step || 0.1;
+
+
+    slider.min = min;
+
+    slider.max = max;
+
+    slider.step = step;
+
+    slider.value = min;
+
+
+    value.textContent =
+        Number(min).toFixed(1) + "x";
+
+
+    container.classList.remove(
+        "hidden"
+    );
+
+
+    slider.oninput =
+        async function() {
+
+            const zoom =
+                Number(this.value);
+
+
+            value.textContent =
+                zoom.toFixed(1) + "x";
+
+
+            if (!track)
+                return;
+
+
+            try {
+
+                await track.applyConstraints({
+
+                    advanced: [
+
+                        {
+                            zoom: zoom
+                        }
+
+                    ]
+
+                });
+
+            }
+            catch (error) {
+
+                console.log(
+                    "Zoom error:",
+                    error
+                );
+
+            }
+
+        };
 
 }
 
 
 /*
 |--------------------------------------------------------------------------
-| Read Camera Frame
+| Main Scan Loop
 |--------------------------------------------------------------------------
 */
 
-function scanFrame() {
+async function scanLoop() {
 
     if (!scanning)
         return;
@@ -583,19 +1067,121 @@ function scanFrame() {
         video.HAVE_ENOUGH_DATA
     ) {
 
-        scanTimer =
-            setTimeout(scanFrame, 100);
+        scheduleScan();
 
         return;
 
     }
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | Camera Resolution
-    |--------------------------------------------------------------------------
-    */
+    try {
+
+        /*
+        |--------------------------------------------------------------------------
+        | First: BarcodeDetector
+        |--------------------------------------------------------------------------
+        */
+
+        if (barcodeDetector) {
+
+            const detected =
+                await barcodeDetector.detect(
+                    video
+                );
+
+
+            if (
+                detected &&
+                detected.length
+            ) {
+
+                for (
+                    const item of detected
+                ) {
+
+                    if (
+                        item.rawValue
+                    ) {
+
+                        handleQR(
+                            item.rawValue
+                        );
+
+                        scheduleScan();
+
+                        return;
+
+                    }
+
+                }
+
+            }
+
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Second: jsQR
+        |--------------------------------------------------------------------------
+        */
+
+        const result =
+            scanWithJsQR();
+
+
+        if (result) {
+
+            handleQR(
+                result
+            );
+
+        }
+
+    }
+    catch (error) {
+
+        console.log(
+            "Scan error:",
+            error
+        );
+
+    }
+
+
+    scheduleScan();
+
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Schedule
+|--------------------------------------------------------------------------
+*/
+
+function scheduleScan() {
+
+    if (!scanning)
+        return;
+
+
+    scanTimeout =
+        setTimeout(
+            scanLoop,
+            100
+        );
+
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| jsQR Multi Processing
+|--------------------------------------------------------------------------
+*/
+
+function scanWithJsQR() {
 
     const width =
         video.videoWidth;
@@ -604,38 +1190,417 @@ function scanFrame() {
         video.videoHeight;
 
 
-    if (!width || !height) {
+    if (
+        !width ||
+        !height
+    ) {
 
-        scanTimer =
-            setTimeout(scanFrame, 100);
-
-        return;
+        return null;
 
     }
 
 
-    canvas.width = width;
+    /*
+    |--------------------------------------------------------------------------
+    | We don't need full frame at first.
+    |
+    | QR is expected to be inside scanner box.
+    |--------------------------------------------------------------------------
+    */
 
-    canvas.height = height;
+
+    const size =
+        Math.floor(
+            Math.min(
+                width,
+                height
+            ) * 0.78
+        );
 
 
-    ctx.drawImage(
-        video,
+    const x =
+        Math.floor(
+            (width - size) / 2
+        );
+
+
+    const y =
+        Math.floor(
+            (height - size) / 2
+        );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Try original crop
+    |--------------------------------------------------------------------------
+    */
+
+    let result =
+        decodeCrop(
+            x,
+            y,
+            size,
+            size,
+            1
+        );
+
+
+    if (result)
+        return result;
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Upscale 2x
+    |--------------------------------------------------------------------------
+    */
+
+    result =
+        decodeCrop(
+            x,
+            y,
+            size,
+            size,
+            2
+        );
+
+
+    if (result)
+        return result;
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Upscale 3x
+    |--------------------------------------------------------------------------
+    */
+
+    result =
+        decodeCrop(
+            x,
+            y,
+            size,
+            size,
+            3
+        );
+
+
+    if (result)
+        return result;
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Upscale 4x
+    |--------------------------------------------------------------------------
+    */
+
+    result =
+        decodeCrop(
+            x,
+            y,
+            size,
+            size,
+            4
+        );
+
+
+    if (result)
+        return result;
+
+
+    return null;
+
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Decode Crop
+|--------------------------------------------------------------------------
+*/
+
+function decodeCrop(
+    x,
+    y,
+    width,
+    height,
+    scale
+) {
+
+    const outputWidth =
+        Math.floor(
+            width * scale
+        );
+
+    const outputHeight =
+        Math.floor(
+            height * scale
+        );
+
+
+    processingCanvas.width =
+        outputWidth;
+
+    processingCanvas.height =
+        outputHeight;
+
+
+    processingCtx.clearRect(
         0,
         0,
-        width,
-        height
+        outputWidth,
+        outputHeight
     );
 
 
     /*
     |--------------------------------------------------------------------------
-    | First: Scan Full Image
+    | IMPORTANT
+    |
+    | Disable interpolation
     |--------------------------------------------------------------------------
     */
 
-    const imageData =
-        ctx.getImageData(
+    processingCtx.imageSmoothingEnabled =
+        false;
+
+
+    processingCtx.drawImage(
+
+        video,
+
+        x,
+        y,
+        width,
+        height,
+
+        0,
+        0,
+        outputWidth,
+        outputHeight
+
+    );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | 1. Original
+    |--------------------------------------------------------------------------
+    */
+
+    let image =
+        processingCtx.getImageData(
+            0,
+            0,
+            outputWidth,
+            outputHeight
+        );
+
+
+    let result =
+        decodeImage(
+            image,
+            outputWidth,
+            outputHeight
+        );
+
+
+    if (result)
+        return result;
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | 2. Grayscale
+    |--------------------------------------------------------------------------
+    */
+
+    image =
+        createProcessedImage(
+            outputWidth,
+            outputHeight,
+            "gray"
+        );
+
+
+    result =
+        decodeImage(
+            image,
+            outputWidth,
+            outputHeight
+        );
+
+
+    if (result)
+        return result;
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | 3. Contrast
+    |--------------------------------------------------------------------------
+    */
+
+    image =
+        createProcessedImage(
+            outputWidth,
+            outputHeight,
+            "contrast"
+        );
+
+
+    result =
+        decodeImage(
+            image,
+            outputWidth,
+            outputHeight
+        );
+
+
+    if (result)
+        return result;
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | 4. Threshold
+    |--------------------------------------------------------------------------
+    */
+
+    image =
+        createProcessedImage(
+            outputWidth,
+            outputHeight,
+            "threshold"
+        );
+
+
+    result =
+        decodeImage(
+            image,
+            outputWidth,
+            outputHeight
+        );
+
+
+    if (result)
+        return result;
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | 5. Adaptive-ish threshold
+    |--------------------------------------------------------------------------
+    */
+
+    image =
+        createProcessedImage(
+            outputWidth,
+            outputHeight,
+            "threshold2"
+        );
+
+
+    result =
+        decodeImage(
+            image,
+            outputWidth,
+            outputHeight
+        );
+
+
+    if (result)
+        return result;
+
+
+    return null;
+
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Decode Image With jsQR
+|--------------------------------------------------------------------------
+*/
+
+function decodeImage(
+    image,
+    width,
+    height
+) {
+
+    if (
+        typeof jsQR !==
+        "function"
+    ) {
+
+        return null;
+
+    }
+
+
+    try {
+
+        const result =
+            jsQR(
+
+                image.data,
+
+                width,
+
+                height,
+
+                {
+                    inversionAttempts:
+                        "attemptBoth"
+
+                }
+
+            );
+
+
+        if (
+            result &&
+            result.data
+        ) {
+
+            return result.data;
+
+        }
+
+    }
+    catch (error) {
+
+        console.log(
+            "jsQR error:",
+            error
+        );
+
+    }
+
+
+    return null;
+
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Image Processing
+|--------------------------------------------------------------------------
+*/
+
+function createProcessedImage(
+    width,
+    height,
+    mode
+) {
+
+    const image =
+        processingCtx.getImageData(
             0,
             0,
             width,
@@ -643,228 +1608,190 @@ function scanFrame() {
         );
 
 
-    const code =
-        jsQR(
-            imageData.data,
-            width,
-            height,
-            {
-                inversionAttempts: "attemptBoth"
-            }
-        );
+    const data =
+        image.data;
 
 
-    if (code) {
+    for (
+        let i = 0;
+        i < data.length;
+        i += 4
+    ) {
 
-        handleQR(code.data);
+        const r =
+            data[i];
 
-        scanTimer =
-            setTimeout(scanFrame, 150);
+        const g =
+            data[i + 1];
 
-        return;
+        const b =
+            data[i + 2];
 
-    }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Luminance
+        |--------------------------------------------------------------------------
+        */
+
+        let gray =
+            (
+                0.299 * r +
+                0.587 * g +
+                0.114 * b
+            );
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | Second: Scan Cropped Regions
-    |
-    | برای QR کوچک بسیار مهم است.
-    |--------------------------------------------------------------------------
-    */
+        /*
+        |--------------------------------------------------------------------------
+        | Gray
+        |--------------------------------------------------------------------------
+        */
 
-    const regions = [
+        if (
+            mode === "gray"
+        ) {
 
-        // مرکز
-        {
-            x: 0.15,
-            y: 0.15,
-            w: 0.70,
-            h: 0.70
-        },
+            data[i] =
+                gray;
 
-        // بالا چپ
-        {
-            x: 0,
-            y: 0,
-            w: 0.60,
-            h: 0.60
-        },
+            data[i + 1] =
+                gray;
 
-        // بالا راست
-        {
-            x: 0.40,
-            y: 0,
-            w: 0.60,
-            h: 0.60
-        },
+            data[i + 2] =
+                gray;
 
-        // پایین چپ
-        {
-            x: 0,
-            y: 0.40,
-            w: 0.60,
-            h: 0.60
-        },
-
-        // پایین راست
-        {
-            x: 0.40,
-            y: 0.40,
-            w: 0.60,
-            h: 0.60
         }
 
-    ];
+
+        /*
+        |--------------------------------------------------------------------------
+        | Contrast
+        |--------------------------------------------------------------------------
+        */
+
+        else if (
+            mode === "contrast"
+        ) {
+
+            gray =
+                (
+                    gray - 128
+                ) * 1.8 + 128;
 
 
-    for (const region of regions) {
+            gray =
+                Math.max(
+                    0,
+                    Math.min(
+                        255,
+                        gray
+                    )
+                );
 
-        const x =
-            Math.floor(
-                width * region.x
-            );
 
-        const y =
-            Math.floor(
-                height * region.y
-            );
+            data[i] =
+                gray;
 
-        const w =
-            Math.floor(
-                width * region.w
-            );
+            data[i + 1] =
+                gray;
 
-        const h =
-            Math.floor(
-                height * region.h
-            );
+            data[i + 2] =
+                gray;
+
+        }
 
 
         /*
         |--------------------------------------------------------------------------
-        | Crop
+        | Threshold
         |--------------------------------------------------------------------------
         */
 
-        const cropCanvas =
-            document.createElement("canvas");
+        else if (
+            mode === "threshold"
+        ) {
+
+            const value =
+                gray > 145
+                    ? 255
+                    : 0;
+
+
+            data[i] =
+                value;
+
+            data[i + 1] =
+                value;
+
+            data[i + 2] =
+                value;
+
+        }
 
 
         /*
-        | دو برابر کردن تصویر crop
-        | برای QR های کوچک
+        |--------------------------------------------------------------------------
+        | Threshold 2
+        |--------------------------------------------------------------------------
         */
 
-        const scale = 2;
+        else if (
+            mode === "threshold2"
+        ) {
+
+            const value =
+                gray > 175
+                    ? 255
+                    : 0;
 
 
-        cropCanvas.width =
-            w * scale;
+            data[i] =
+                value;
 
-        cropCanvas.height =
-            h * scale;
+            data[i + 1] =
+                value;
 
-
-        const cropCtx =
-            cropCanvas.getContext("2d", {
-                willReadFrequently: true
-            });
-
-
-        cropCtx.imageSmoothingEnabled = false;
-
-
-        cropCtx.drawImage(
-
-            video,
-
-            x,
-            y,
-            w,
-            h,
-
-            0,
-            0,
-            w * scale,
-            h * scale
-
-        );
-
-
-        const cropImage =
-            cropCtx.getImageData(
-                0,
-                0,
-                w * scale,
-                h * scale
-            );
-
-
-        const result =
-            jsQR(
-
-                cropImage.data,
-
-                w * scale,
-
-                h * scale,
-
-                {
-                    inversionAttempts:
-                        "attemptBoth"
-                }
-
-            );
-
-
-        if (result) {
-
-            handleQR(result.data);
-
-            break;
+            data[i + 2] =
+                value;
 
         }
 
     }
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | حدود 8 فریم در ثانیه
-    |--------------------------------------------------------------------------
-    */
-
-    scanTimer =
-        setTimeout(
-            scanFrame,
-            120
-        );
+    return image;
 
 }
 
 
 /*
 |--------------------------------------------------------------------------
-| QR Found
+| Handle QR
 |--------------------------------------------------------------------------
 */
 
-function handleQR(value) {
+function handleQR(
+    value
+) {
+
+    if (!value)
+        return;
+
 
     const now =
         Date.now();
 
 
     /*
-    | جلوگیری از چند بار خواندن
-    | همان QR
+    |--------------------------------------------------------------------------
+    | Same QR debounce
+    |--------------------------------------------------------------------------
     */
 
     if (
-        value === lastQR &&
-        now - lastQRTime < 2500
+        value === lastDecodedValue &&
+        now - lastDecodedTime < 2500
     ) {
 
         return;
@@ -872,24 +1799,29 @@ function handleQR(value) {
     }
 
 
-    lastQR = value;
+    lastDecodedValue =
+        value;
 
-    lastQRTime = now;
+    lastDecodedTime =
+        now;
 
 
     /*
-    | اگر قبلاً ثبت شده
+    |--------------------------------------------------------------------------
+    | Duplicate
+    |--------------------------------------------------------------------------
     */
 
     const exists =
         results.some(
-            x => x.qrCode === value
+            x =>
+                x.qrCode === value
         );
 
 
     if (exists) {
 
-        showLastQR(
+        showResult(
             value,
             true
         );
@@ -898,6 +1830,12 @@ function handleQR(value) {
 
     }
 
+
+    /*
+    |--------------------------------------------------------------------------
+    | Add
+    |--------------------------------------------------------------------------
+    */
 
     const item = {
 
@@ -908,69 +1846,200 @@ function handleQR(value) {
     };
 
 
-    results.push(item);
+    results.push(
+        item
+    );
 
 
-    addResult(item);
+    addResult(
+        item
+    );
 
 
-    showLastQR(
+    showResult(
         value,
         false
     );
 
 
     updateStatus(
-        "QR شناسایی شد ✓",
+        "QR با موفقیت خوانده شد ✓",
         "bg-emerald-100 text-emerald-700"
     );
 
 
-    setTimeout(() => {
+    /*
+    |--------------------------------------------------------------------------
+    | Return to scanning
+    |--------------------------------------------------------------------------
+    */
 
-        if (scanning) {
+    setTimeout(
+        () => {
 
-            updateStatus(
-                "آماده اسکن QR بعدی",
-                "bg-blue-100 text-blue-700"
-            );
+            if (scanning) {
 
-        }
+                updateStatus(
+                    "QR بعدی را قرار دهید",
+                    "bg-blue-100 text-blue-700"
+                );
 
-    }, 1200);
+            }
+
+        },
+        1200
+    );
 
 }
 
 
 /*
 |--------------------------------------------------------------------------
-| Add Result
+| Show Result
 |--------------------------------------------------------------------------
 */
 
-function addResult(item) {
+function showResult(
+    value,
+    duplicate
+) {
+
+    const box =
+        document.getElementById(
+            "lastResult"
+        );
+
+
+    const icon =
+        document.getElementById(
+            "resultIcon"
+        );
+
+
+    const title =
+        document.getElementById(
+            "resultTitle"
+        );
+
+
+    const qr =
+        document.getElementById(
+            "lastQr"
+        );
+
+
+    box.classList.remove(
+        "hidden"
+    );
+
+
+    box.classList.add(
+        "success-animation"
+    );
+
+
+    qr.textContent =
+        value;
+
+
+    if (duplicate) {
+
+        box.className =
+            "rounded-3xl p-5 mb-5 border bg-amber-50 border-amber-200";
+
+
+        icon.className =
+            "w-11 h-11 shrink-0 rounded-full flex items-center justify-center text-xl bg-amber-100";
+
+
+        icon.textContent =
+            "⚠️";
+
+
+        title.className =
+            "font-bold text-amber-700";
+
+
+        title.textContent =
+            "این QR قبلاً ثبت شده است";
+
+    }
+    else {
+
+        box.className =
+            "rounded-3xl p-5 mb-5 border bg-emerald-50 border-emerald-200 success-animation";
+
+
+        icon.className =
+            "w-11 h-11 shrink-0 rounded-full flex items-center justify-center text-xl bg-emerald-100";
+
+
+        icon.textContent =
+            "✓";
+
+
+        title.className =
+            "font-bold text-emerald-700";
+
+
+        title.textContent =
+            "QR با موفقیت شناسایی شد";
+
+    }
+
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Add Result To Table
+|--------------------------------------------------------------------------
+*/
+
+function addResult(
+    item
+) {
 
     const empty =
-        document.getElementById("empty");
+        document.getElementById(
+            "empty"
+        );
 
 
     if (empty)
         empty.remove();
 
 
+    const tbody =
+        document.getElementById(
+            "results"
+        );
+
+
     const tr =
-        document.createElement("tr");
+        document.createElement(
+            "tr"
+        );
 
 
     tr.className =
-        "border-b border-slate-100";
+        "border-b border-slate-100 hover:bg-slate-50";
+
+
+    const index =
+        results.length;
 
 
     tr.innerHTML = `
 
+        <td class="px-5 py-4 text-slate-500">
+            ${index}
+        </td>
+
         <td class="px-5 py-4">
 
-            <div class="font-mono text-sm break-all">
+            <div
+                class="font-mono text-xs sm:text-sm break-all text-slate-700">
 
                 ${escapeHtml(item.qrCode)}
 
@@ -978,7 +2047,8 @@ function addResult(item) {
 
         </td>
 
-        <td class="px-5 py-4 text-sm text-slate-500">
+        <td
+            class="px-5 py-4 text-xs sm:text-sm text-slate-500 whitespace-nowrap">
 
             ${formatDate(item.time)}
 
@@ -987,9 +2057,9 @@ function addResult(item) {
     `;
 
 
-    document
-        .getElementById("results")
-        .prepend(tr);
+    tbody.prepend(
+        tr
+    );
 
 
     document
@@ -1007,54 +2077,6 @@ function addResult(item) {
 
 /*
 |--------------------------------------------------------------------------
-| Last QR
-|--------------------------------------------------------------------------
-*/
-
-function showLastQR(
-    value,
-    duplicate
-) {
-
-    const box =
-        document.getElementById(
-            "lastResult"
-        );
-
-
-    const text =
-        document.getElementById(
-            "lastQr"
-        );
-
-
-    box.classList.remove(
-        "hidden"
-    );
-
-
-    text.textContent =
-        value;
-
-
-    if (duplicate) {
-
-        box.className =
-            "bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-5";
-
-    }
-    else {
-
-        box.className =
-            "bg-emerald-50 border border-emerald-200 rounded-2xl p-4 mb-5 success-animation";
-
-    }
-
-}
-
-
-/*
-|--------------------------------------------------------------------------
 | Stop Camera
 |--------------------------------------------------------------------------
 */
@@ -1064,11 +2086,13 @@ function stopCamera() {
     scanning = false;
 
 
-    if (scanTimer) {
+    if (scanTimeout) {
 
-        clearTimeout(scanTimer);
+        clearTimeout(
+            scanTimeout
+        );
 
-        scanTimer = null;
+        scanTimeout = null;
 
     }
 
@@ -1078,7 +2102,7 @@ function stopCamera() {
         stream
             .getTracks()
             .forEach(
-                track => track.stop()
+                t => t.stop()
             );
 
         stream = null;
@@ -1086,9 +2110,32 @@ function stopCamera() {
     }
 
 
-    video.srcObject = null;
+    track = null;
 
-    currentTrack = null;
+
+    video.srcObject =
+        null;
+
+
+    document
+        .getElementById("cameraOff")
+        .classList.remove(
+            "hidden"
+        );
+
+
+    document
+        .getElementById("scannerOverlay")
+        .classList.add(
+            "hidden"
+        );
+
+
+    document
+        .getElementById("zoomContainer")
+        .classList.add(
+            "hidden"
+        );
 
 
     document
@@ -1101,16 +2148,6 @@ function stopCamera() {
         .disabled = true;
 
 
-    document
-        .getElementById("cameraLoading")
-        .classList.remove("hidden");
-
-
-    document
-        .getElementById("zoomContainer")
-        .classList.add("hidden");
-
-
     updateStatus(
         "اسکن متوقف شد",
         "bg-slate-100 text-slate-600"
@@ -1121,46 +2158,65 @@ function stopCamera() {
 
 /*
 |--------------------------------------------------------------------------
-| Clear
+| Clear Results
 |--------------------------------------------------------------------------
 */
 
 function clearResults() {
 
+    if (
+        results.length === 0
+    )
+        return;
+
+
+    if (
+        !confirm(
+            "آیا تمام QR های اسکن شده پاک شوند؟"
+        )
+    )
+        return;
+
+
     results = [];
 
-    lastQR = "";
 
-    lastQRTime = 0;
+    lastDecodedValue =
+        "";
+
+    lastDecodedTime =
+        0;
 
 
     document
         .getElementById("results")
         .innerHTML = `
 
-            <tr id="empty">
+        <tr id="empty">
 
-                <td
-                    colspan="2"
-                    class="text-center py-10 text-slate-400">
+            <td
+                colspan="3"
+                class="text-center py-12 text-slate-400">
 
-                    هنوز QR اسکن نشده است
+                هنوز QR ای اسکن نشده است
 
-                </td>
+            </td>
 
-            </tr>
+        </tr>
 
-        `;
+    `;
 
 
     document
         .getElementById("count")
-        .textContent = "0";
+        .textContent =
+        "0";
 
 
     document
         .getElementById("exportBtn")
-        .disabled = true;
+        .disabled =
+        true;
 
 }
 
@@ -1173,27 +2229,42 @@ function clearResults() {
 
 function exportExcel() {
 
-    if (!results.length)
+    if (
+        results.length === 0
+    ) {
+
+        alert(
+            "هیچ اطلاعاتی برای خروجی وجود ندارد."
+        );
+
         return;
+
+    }
 
 
     const data =
-        results.map((item, index) => ({
+        results.map(
+            (item, index) => ({
 
-            "ردیف":
-                index + 1,
+                "ردیف":
+                    index + 1,
 
-            "QR Code":
-                item.qrCode,
+                "QR Code":
+                    item.qrCode,
 
-            "زمان اسکن":
-                formatDate(item.time)
+                "زمان اسکن":
+                    formatDate(
+                        item.time
+                    )
 
-        }));
+            })
+        );
 
 
     const worksheet =
-        XLSX.utils.json_to_sheet(data);
+        XLSX.utils.json_to_sheet(
+            data
+        );
 
 
     worksheet["!cols"] = [
@@ -1224,9 +2295,27 @@ function exportExcel() {
     );
 
 
+    const date =
+        new Date();
+
+
+    const filename =
+        "Cheque_QR_" +
+        date.getFullYear() +
+        "-" +
+        String(
+            date.getMonth() + 1
+        ).padStart(2, "0") +
+        "-" +
+        String(
+            date.getDate()
+        ).padStart(2, "0") +
+        ".xlsx";
+
+
     XLSX.writeFile(
         workbook,
-        "Cheque_QR.xlsx"
+        filename
     );
 
 }
@@ -1243,18 +2332,18 @@ function updateStatus(
     classes
 ) {
 
-    const status =
+    const element =
         document.getElementById(
             "status"
         );
 
 
-    status.textContent =
+    element.textContent =
         text;
 
 
-    status.className =
-        "px-4 py-2 rounded-full text-sm " +
+    element.className =
+        "shrink-0 px-4 py-2 rounded-full text-xs sm:text-sm " +
         classes;
 
 }
@@ -1266,17 +2355,26 @@ function updateStatus(
 |--------------------------------------------------------------------------
 */
 
-function formatDate(date) {
+function formatDate(
+    date
+) {
 
     return date.toLocaleString(
         "fa-IR",
         {
+
             year: "numeric",
+
             month: "2-digit",
+
             day: "2-digit",
+
             hour: "2-digit",
+
             minute: "2-digit",
+
             second: "2-digit"
+
         }
     );
 
@@ -1289,13 +2387,19 @@ function formatDate(date) {
 |--------------------------------------------------------------------------
 */
 
-function escapeHtml(text) {
+function escapeHtml(
+    text
+) {
 
     const div =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
+
 
     div.textContent =
         text;
+
 
     return div.innerHTML;
 
@@ -1304,7 +2408,7 @@ function escapeHtml(text) {
 
 /*
 |--------------------------------------------------------------------------
-| Page Close
+| Cleanup
 |--------------------------------------------------------------------------
 */
 
@@ -1320,4 +2424,5 @@ window.addEventListener(
 </script>
 
 </body>
+
 </html>
