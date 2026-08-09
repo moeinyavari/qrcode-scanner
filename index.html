@@ -165,6 +165,10 @@
   <video id="video" playsinline muted></video>
   <div class="scan-box"></div>
 </div>
+<div id="zoom-wrap" style="display:none; width:100%; max-width:420px; margin-top:10px;">
+  <label style="font-size:13px; color:#94a3b8;">🔍 زوم</label>
+  <input type="range" id="zoomRange" style="width:100%;">
+</div>
 <canvas id="canvas" style="display:none;"></canvas>
 
 <div id="progress">اسکن‌شده: <b id="countNum">0</b> / <span id="targetNum">10</span></div>
@@ -211,6 +215,20 @@ targetInput.addEventListener('change', () => {
   targetNum.textContent = targetCount;
 });
 
+function setupZoom(track, zoomCap) {
+  const zoomWrap = document.getElementById('zoom-wrap');
+  const zoomRange = document.getElementById('zoomRange');
+  zoomRange.min = zoomCap.min;
+  zoomRange.max = zoomCap.max;
+  zoomRange.step = zoomCap.step || 0.1;
+  zoomRange.value = zoomCap.min;
+  zoomWrap.style.display = 'block';
+
+  zoomRange.oninput = () => {
+    track.applyConstraints({ advanced: [{ zoom: parseFloat(zoomRange.value) }] }).catch(() => {});
+  };
+}
+
 function beep() {
   try {
     const ctxAudio = new (window.AudioContext || window.webkitAudioContext)();
@@ -232,11 +250,40 @@ async function startScan() {
 
   try {
     stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'environment' }
+      video: {
+        facingMode: { ideal: 'environment' },
+        width: { ideal: 1920 },
+        height: { ideal: 1080 }
+      }
     });
   } catch (err) {
-    statusEl.textContent = 'دسترسی به دوربین ممکن نشد: ' + err.message;
-    return;
+    // اگه رزولوشن بالا پشتیبانی نشد، با تنظیمات ساده‌تر دوباره امتحان کن
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' }
+      });
+    } catch (err2) {
+      statusEl.textContent = 'دسترسی به دوربین ممکن نشد: ' + err2.message;
+      return;
+    }
+  }
+
+  // تلاش برای فعال کردن فوکوس پیوسته (اگه گوشی پشتیبانی کنه)
+  const track = stream.getVideoTracks()[0];
+  try {
+    const capabilities = track.getCapabilities ? track.getCapabilities() : {};
+    const advanced = [];
+    if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
+      advanced.push({ focusMode: 'continuous' });
+    }
+    if (advanced.length) {
+      await track.applyConstraints({ advanced });
+    }
+    if (capabilities.zoom) {
+      setupZoom(track, capabilities.zoom);
+    }
+  } catch (e) {
+    // پشتیبانی نمی‌شه، مشکلی نیست
   }
 
   video.srcObject = stream;
@@ -247,6 +294,8 @@ async function startScan() {
   stopBtn.disabled = false;
   targetInput.disabled = true;
   scanning = true;
+  statusEl.style.color = '#94a3b8';
+  statusEl.textContent = 'گوشی رو ثابت نگه دار و کمی نزدیک‌تر ببر تا فوکوس بشه';
 
   tick();
 }
@@ -259,6 +308,7 @@ function stopScan(finished) {
     stream = null;
   }
   videoWrap.style.display = 'none';
+  document.getElementById('zoom-wrap').style.display = 'none';
   startBtn.disabled = false;
   stopBtn.disabled = true;
   targetInput.disabled = false;
@@ -278,7 +328,7 @@ function tick() {
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const code = jsQR(imageData.data, imageData.width, imageData.height, {
-      inversionAttempts: 'dontInvert'
+      inversionAttempts: 'attemptBoth'
     });
 
     if (code && code.data) {
